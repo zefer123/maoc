@@ -109,7 +109,7 @@ try {
   await new Promise((resolve, reject) => { socket.once('open', resolve); socket.once('error', reject); });
   const cdp = (method, params = {}) => new Promise((resolve, reject) => { const id = ++next; const timer = setTimeout(() => { pending.delete(id); reject(new Error(`CDP timeout ${method}`)); }, 15000); pending.set(id, { resolve, reject, timer }); socket.send(JSON.stringify({ id, method, params })); });
   const evaluate = async (expression) => { const result = await cdp('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text); return result.result.value; };
-  const wait = async (expression) => { for (let i = 0; i < 240; i += 1) { try { if (await evaluate(`Boolean(${expression})`)) return; } catch (reason) { if (!/context|navigated|Cannot read properties of null/i.test(reason.message)) throw reason; } await delay(50); } throw new Error(`Timed out: ${expression}`); };
+  const wait = async (expression, evaluateIn = evaluate) => { for (let i = 0; i < 240; i += 1) { try { if (await evaluateIn(`Boolean(${expression})`)) return; } catch (reason) { if (!/context|navigated|Cannot read properties of null/i.test(reason.message)) throw reason; } await delay(50); } throw new Error(`Timed out: ${expression}`); };
   const click = async (text, selector = 'button') => { const found = await evaluate(`(() => {const b=[...document.querySelectorAll(${JSON.stringify(selector)})].find(b=>b.getClientRects().length && b.textContent.trim()===${JSON.stringify(text)}); if(!b || b.disabled)return false;b.click();return true;})()`); assert.ok(found, `Visible enabled control: ${text}`); await delay(40); };
   const nav = async (section) => { const found = await evaluate(`(() => {const b=[...document.querySelectorAll('nav button')].find(b=>b.getClientRects().length && b.textContent.replace(/\\d+/g,'').trim()===${JSON.stringify(section)});if(!b)return false;b.click();return true;})()`); assert.ok(found, `Navigation ${section}`); await delay(40); };
   // A live element from the outgoing document is not reload completion.
@@ -1250,28 +1250,47 @@ try {
   await nav('Library'); await click('บันทึกและความเชื่อมโยง');
   await wait(`document.querySelector('.dash-knowledge-host') && localStorage.getItem('maoc_persistence_sync_v1') && JSON.parse(localStorage.getItem('maoc_persistence_sync_v1')).notes?.dirty === false`);
   const syncNote = { id: 'stage31-browser-note', title: 'Stage 3.1 fixture note', content: 'Isolated browser proof', tags: [], links: [] };
-  const senderTab = await (await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(new URL('/index.html', url).href)}`, { method: 'PUT', signal: AbortSignal.timeout(5000) })).json();
-  const senderSocket = new WebSocket(senderTab.webSocketDebuggerUrl);
+  const senderUrl = new URL('/index.html', url);
+  const senderTab = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT', signal: AbortSignal.timeout(5000) })).json();
+  const senderSocket = new WebSocket(senderTab.webSocketDebuggerUrl, { handshakeTimeout: 5000 });
   try {
     await new Promise((resolve, reject) => { senderSocket.once('open', resolve); senderSocket.once('error', reject); });
-    const result = await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Stage 3.1 sender tab timed out')), 5000);
-      senderSocket.on('message', (raw) => {
+    let senderCommandId = 0;
+    const senderCdp = (method, params) => new Promise((resolve, reject) => {
+      const id = ++senderCommandId;
+      const cleanup = () => { clearTimeout(timer); senderSocket.off('message', onMessage); senderSocket.off('close', onClose); };
+      const onClose = () => { cleanup(); reject(new Error(`Stage 3.1 sender tab closed during ${method}`)); };
+      const onMessage = (raw) => {
         const message = JSON.parse(raw);
-        if (message.id !== 1) return;
-        clearTimeout(timer);
-        if (message.error || message.result?.exceptionDetails) reject(new Error('Stage 3.1 sender tab could not save'));
-        else resolve(message.result.result.value);
-      });
-      senderSocket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { returnByValue: true, awaitPromise: true, expression: `(async () => {
-        const origin = ${JSON.stringify(new URL(url).origin)};
+        if (message.id !== id) return;
+        cleanup();
+        if (message.error) reject(new Error(`Stage 3.1 sender ${method}: ${message.error.message}`));
+        else resolve(message.result);
+      };
+      const timer = setTimeout(() => { cleanup(); reject(new Error(`Stage 3.1 sender ${method} timed out`)); }, 5000);
+      senderSocket.on('message', onMessage);
+      senderSocket.once('close', onClose);
+      senderSocket.send(JSON.stringify({ id, method, params }), (error) => { if (error) { cleanup(); reject(error); } });
+    });
+    const evaluateSender = async (expression) => {
+      const response = await senderCdp('Runtime.evaluate', { returnByValue: true, awaitPromise: true, expression });
+      if (response.exceptionDetails) throw new Error(`Stage 3.1 sender evaluation: ${response.exceptionDetails.exception?.description || response.exceptionDetails.text}`);
+      return response.result.value;
+    };
+    const navigation = await senderCdp('Page.navigate', { url: senderUrl.href });
+    assert.ok(!navigation.errorText, `Stage 3.1 sender navigation failed: ${navigation.errorText}`);
+    await wait(`location.href === ${JSON.stringify(senderUrl.href)} && document.readyState !== 'loading'`, evaluateSender);
+    // Probe readiness only; submit the write exactly once and surface errors.
+    const result = await evaluateSender(`(async () => {
+        const origin = ${JSON.stringify(senderUrl.origin)};
         const endpoint = origin + '/api/storage/notes';
         if (location.origin !== origin) throw Error('Not on the fixture origin');
-        const current = await (await fetch(endpoint)).json();
+        const response = await fetch(endpoint);
+        if (!response.ok) throw Error('Reading the current note revision failed: HTTP ' + response.status);
+        const current = await response.json();
         const save = await fetch(endpoint, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({revision:current.revision,data:[${JSON.stringify(syncNote)},...current.data]})});
         return {status:save.status,revision:(await save.json()).revision};
-      })()` } }));
-    });
+      })()`);
     assert.equal(result.status, 200);
     const displayed = `document.querySelector('[aria-label="เปิดบันทึก ${syncNote.title}"]') && JSON.parse(localStorage.getItem('maoc_persistence_sync_v1')).notes.revision === ${result.revision}`;
     await wait(displayed);
