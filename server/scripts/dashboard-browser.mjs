@@ -147,6 +147,14 @@ try {
     else void cdp('Fetch.continueRequest', { requestId });
   });
   const releaseChunks = async () => { holdChunk = ''; for (const requestId of heldChunks.keys()) await cdp('Fetch.continueRequest', { requestId }); heldChunks.clear(); };
+  const waitForHeldChunk = async () => {
+    const chunk = holdChunk;
+    assert.ok(chunk, 'A lazy chunk must be selected before waiting for interception');
+    // Suspense can render before the DevTools Fetch.requestPaused event arrives.
+    const intercepted = () => [...heldChunks.values()].some((url) => url.includes(chunk));
+    for (let i = 0; i < 240 && !intercepted(); i += 1) await delay(50);
+    assert.ok(intercepted(), `DevTools must intercept the lazy request for ${chunk}`);
+  };
   await cdp('Fetch.enable', { patterns: [{ urlPattern: '*TradeFloorRoom*' }, { urlPattern: '*TopologyTreeView*' }, { urlPattern: '*PerformanceDashboard*' }, { urlPattern: '*AfterActionReview*' }, { urlPattern: '*WorkflowBuilderModal*' }] });
   await cdp('Runtime.enable'); await cdp('Page.enable');
   await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('maoc_llm_engine_config_v1',JSON.stringify({provider:'openai',apiKey:'offline-browser-transport',modelName:'offline',autoFailover:false,rpm:1000,maxTaskTokens:500000}));` });
@@ -270,10 +278,10 @@ try {
   checks.push('Overview situation cards open exact Running/Completed/Failed mission filters and keyboard Needs You opens Action inbox without dispatch');
   holdChunk = 'PerformanceDashboard';
   await nav('Teams'); await click('Analytics');
-  await wait(`document.querySelector('[data-lazy-state="loading"]')`); assert.ok(heldChunks.size > 0);
+  await wait(`document.querySelector('[data-lazy-state="loading"]')`); await waitForHeldChunk();
   await releaseChunks(); holdChunk = 'AfterActionReview';
   await wait(`document.querySelector('[aria-labelledby="analytics-title"]').textContent.includes('ยังไม่มีข้อมูลที่ตรงตัวกรอง')`);
-  await wait(`document.querySelector('[data-lazy-state="loading"]')`); assert.ok(heldChunks.size > 0);
+  await wait(`document.querySelector('[data-lazy-state="loading"]')`); await waitForHeldChunk();
   await releaseChunks();
   checks.push('Cold analytics module shows loading feedback without issuing provider work');
   checks.push('Analytics history requests AAR separately and keeps the analytics controls visible while it loads');
@@ -360,7 +368,7 @@ try {
   await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', ...entrance, button: 'left', clickCount: 1 });
   await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', ...entrance, button: 'left', clickCount: 1 });
   await wait(`document.querySelector('[data-lazy-state="loading"]')`);
-  assert.ok(heldChunks.size > 0);
+  await waitForHeldChunk();
   const roomLoadingHeight = await evaluate(`document.querySelector('.dash-spatial-host').getBoundingClientRect().height`);
   await releaseChunks();
   await wait(`document.querySelector('.guild-desk .pixel-agent')`);
@@ -451,7 +459,7 @@ try {
   holdChunk = 'TopologyTreeView';
   await nav('Teams'); await click('Topology');
   await wait(`document.querySelector('[data-lazy-state="loading"]')`);
-  assert.ok(heldChunks.size > 0); await releaseChunks();
+  await waitForHeldChunk(); await releaseChunks();
   await wait(`document.querySelector('.topology-world')`);
   checks.push('Cold topology chunk is requested only on entry and resolves without replacing navigation');
   assert.equal(await evaluate(`!![...document.querySelectorAll('button')].find(e=>e.textContent.includes('DEMO FLOW: OFF'))`), true);
@@ -473,7 +481,7 @@ try {
   await key('Escape', 'Escape', 27);
   await wait(`!document.querySelector('.dash-builder')`);
   assert.equal(await evaluate(`document.activeElement===window.builderOpener`), true);
-  assert.ok(heldChunks.size > 0); await releaseChunks();
+  await waitForHeldChunk(); await releaseChunks();
   await wait(`performance.getEntriesByType('resource').some(e=>e.name.includes('WorkflowBuilderModal'))`);
   await delay(100); assert.equal(await evaluate(`document.querySelector('.dash-builder')===null`), true);
   await click('Create mission');
@@ -1040,7 +1048,7 @@ try {
   await click('เปิดภารกิจ');
   if (await evaluate(`!!document.getElementById('task-detail-review')`)) await click('After Action Review');
   await wait(`document.querySelector('[data-lazy-state="loading"]')`);
-  assert.ok(heldChunks.size > 0);
+  await waitForHeldChunk();
   assert.deepEqual(await evaluate(`performance.getEntriesByType('resource').filter(e=>/PerformanceDashboard/.test(e.name)).map(e=>e.name)`), []);
   await releaseChunks(); await wait(`document.querySelector('[aria-labelledby="aar-title"]')`);
   checks.push('Cold mission-detail AAR loads independently of Analytics and retains the requested mission');
@@ -1050,7 +1058,7 @@ try {
     if (chunk === 'TopologyTreeView') { await nav('Teams'); await click('Topology'); }
     else { await evaluate(`window.builderOpener=[...document.querySelectorAll('button')].find(e=>e.getClientRects().length && e.textContent.trim()==='Create mission');window.builderOpener.focus()`); await click('Create mission'); }
     await wait(`document.querySelector('[data-lazy-state="loading"]')`);
-    assert.ok(heldChunks.size > 0); expectedChunkFailure = chunk; holdChunk = '';
+    await waitForHeldChunk(); expectedChunkFailure = chunk; holdChunk = '';
     for (const requestId of heldChunks.keys()) await cdp('Fetch.failRequest', { requestId, errorReason: 'Failed' });
     heldChunks.clear(); await wait(`document.querySelector('[data-lazy-state="error"]')`);
     assert.equal(await evaluate(`!!document.querySelector('.dash-sidebar nav')`), true);
