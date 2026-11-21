@@ -15,6 +15,8 @@ docs/U5-MARKET-ANALYSIS.md; the approved formulas stay there, not in the glossar
 
 ## Write only when a decision needs it
 
+- Public demo means the standalone, read-only `demo/` with invented data and no API, browser storage, or app source in the deployed files. The authorized GitHub Pages source is the root of `gh-pages` in the public `zefer123/maoc` repository, not `main`. Do not publish the backend or Vault, purchase a plan, or change publishing destinations without approval.
+
 - GLOSSARY.md: create at the first resolved domain term that needs shared naming.
   Terms describe domain meaning and distinctions, not formulas, implementation
   instructions, approval statuses or a duplicate specification.

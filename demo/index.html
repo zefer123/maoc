@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="เดโม MAOC Guild Command Center แบบอ่านอย่างเดียวด้วยข้อมูลสมมติ">
+  <title>MAOC — Guild Command Center Demo</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23e2c28b' d='M16 2l12 8v12l-12 8-12-8V10z'/%3E%3Cpath fill='%23171522' d='M9 21v-9l7 5 7-5v9h-3v-4l-4 3-4-3v4z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./demo.css">
+  <script src="./demo.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">ข้ามไปเนื้อหา</a>
+  <header class="top"><div class="shell top-inner">
+    <a class="brand" href="#main"><span class="mark" aria-hidden="true">M</span><span>MAOC <small>GUILD COMMAND CENTER</small></span></a>
+    <nav aria-label="เมนูเดโม"><a href="#board">ภารกิจ</a><a href="#chronicle">Chronicle</a></nav>
+    <span class="badge">STATIC DEMO</span>
+  </div></header>
+  <main id="main" class="shell">
+    <section class="hero" aria-labelledby="headline">
+      <div class="hero-copy"><p class="eyebrow">THE REALM / FIELD PREVIEW</p>
+        <h1 id="headline">Guild<br>Command Center</h1>
+        <p class="intro">สำรวจภารกิจและเส้นทางการส่งต่องานระหว่างทีม จากโจทย์ไปจนถึงรายงานที่ผู้ตรวจรับเปิดอ่านได้</p>
+        <a class="primary" href="#board">สำรวจภารกิจ <span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="atlas" aria-hidden="true"><svg viewBox="0 0 400 250" fill="none">
+        <path class="grid" d="M24 128 199 27l177 101-177 101zM66 128l133-77 135 77-135 77zM112 128l87-50 89 50-89 51zM24 128h352M199 27v202"/>
+        <path class="route" d="m91 128 108-62 107 62-107 63-108-63m108-62v125"/>
+        <path class="node" d="m199 33 38 22v27l-38 22-38-22V55zM91 106l30 17v20l-30 18-30-18v-20zM306 106l30 17v20l-30 18-30-18v-20zM199 169l30 17v20l-30 18-30-18v-20z"/>
+        <path class="gold" d="m199 47 24 14v15l-24 14-24-14V61zM199 57v22m-10-17 10 6 10-6"/>
+        <circle cx="91" cy="133" r="4"/><circle cx="306" cy="133" r="4"/><circle cx="199" cy="196" r="4"/>
+        <text x="199" y="20" text-anchor="middle">COMMAND CORE</text>
+        <text x="91" y="177" text-anchor="middle">TECH</text><text x="306" y="177" text-anchor="middle">DESIGN</text>
+        <text x="199" y="246" text-anchor="middle">DATA</text>
+      </svg></div>
+    </section>
+    <aside class="notice" aria-label="ขอบเขตเดโม"><strong>ข้อมูลสมมติ · อ่านอย่างเดียว</strong><span>ไม่มีการเชื่อมต่อ Backend, AI provider หรือ Vault และไม่บันทึกข้อมูลในเบราว์เซอร์</span></aside>
+    <section id="board" aria-labelledby="board-title" class="board">
+      <div class="section-title"><div><p class="eyebrow">01 / MISSIONS</p><h2 id="board-title">กระดานภารกิจ</h2></div><span id="mission-count" role="status">3 ภารกิจตัวอย่าง</span></div>
+      <form class="filters" aria-label="ตัวกรองภารกิจ"><label for="status">สถานะ</label><select id="status"><option value="all">ทั้งหมด</option><option value="done">เสร็จแล้ว</option><option value="active">กำลังทำ</option><option value="review">รอตรวจรับ</option></select></form>
+      <div class="cards" id="missions">
+        <details data-status="done" open><summary><span class="tag">M-101 · TECH</span><strong>ตรวจความพร้อมก่อนส่งมอบ</strong><span class="state done">เสร็จแล้ว</span></summary><div class="detail"><p>ทีม Tech สรุปรายการตรวจและส่งหลักฐานให้ Command ตรวจรับแล้ว</p><ol><li>รับโจทย์และกำหนดขอบเขต</li><li>ตรวจรายการส่งมอบ</li><li>บันทึกรายงานตัวอย่าง</li></ol></div></details>
+        <details data-status="active"><summary><span class="tag">M-102 · DESIGN</span><strong>ปรับหน้าภารกิจสำหรับมือถือ</strong><span class="state active">กำลังทำ</span></summary><div class="detail"><p>ทีม Design กำลังจัดลำดับข้อมูลสำคัญในพื้นที่หน้าจอจำกัด</p><ol><li>วางโครงหน้า</li><li>ตรวจความอ่านง่าย</li><li>ส่งแบบให้ทีมตรวจรับ</li></ol></div></details>
+        <details data-status="review"><summary><span class="tag">M-103 · DATA</span><strong>ตรวจรายการซ้ำในชุดข้อมูล</strong><span class="state review">รอตรวจรับ</span></summary><div class="detail"><p>ทีม Data ทำเครื่องหมายรายการที่น่าสงสัยไว้ให้ผู้ตรวจรับ ยังไม่มีการแก้ข้อมูล</p><ol><li>ตรวจชุดข้อมูลสมมติ</li><li>แจกแจงรายการที่ควรตรวจ</li><li>รอผู้ตรวจรับยืนยัน</li></ol></div></details>
+      </div>
+    </section>
+    <section id="chronicle" class="board chronicle" aria-labelledby="chronicle-title">
+      <div class="section-title"><div><p class="eyebrow">02 / ACTIVITY</p><h2 id="chronicle-title">Chronicle</h2></div><span>บันทึกตัวอย่าง</span></div>
+      <ol><li><time datetime="09:20">09:20</time><strong>DATA</strong><span>ส่งรายการตัวอย่างให้ผู้ตรวจรับ</span></li><li><time datetime="09:12">09:12</time><strong>DESIGN</strong><span>เริ่มร่างหน้าสำหรับมือถือ</span></li><li><time datetime="09:03">09:03</time><strong>TECH</strong><span>ปิดภารกิจตรวจความพร้อม</span></li></ol>
+    </section>
+  </main>
+  <footer class="shell">MAOC / PUBLIC PREVIEW <span>แสดงข้อมูลสมมติเท่านั้น</span></footer>
+</body>
+</html>
