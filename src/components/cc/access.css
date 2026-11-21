@@ -1,0 +1,14 @@
+.access-gate { min-height: 100dvh; display: grid; place-items: center; padding: 20px; background: #15121d; color: #efe6dc; }
+.access-card, .access-console { border: 1px solid var(--realm-silver, #c0c7d6); border-radius: 8px; padding: clamp(16px, 3vw, 28px); background: #1b1723; }
+.access-card { width: min(100%, 440px); display: grid; gap: 16px; }
+.access-card h1 { font-size: 1.5rem; }
+.access-card label, .access-console label { display: grid; gap: 6px; }
+.access-card input, .access-console input { min-height: 44px; min-width: 0; width: 100%; border: 1px solid #91899e; border-radius: 4px; padding: 8px; color: #f2e7da; background: #282132; }
+.access-action { min-height: 44px; padding: 6px 12px; border: 1px solid #a398ab; border-radius: 4px; color: #eee4da; background: #30283b; }
+.access-action.primary { background: #ddc18b; border-color: #f0dcae; color: #292235; font-weight: 650; }
+.access-action:disabled { opacity: .55; }
+.access-card :focus-visible, .access-console :focus-visible { outline: 2px solid #f5d899; outline-offset: 2px; }
+.access-table-scroll { overflow-x: auto; }
+.access-console table { width: 100%; min-width: 640px; text-align: left; }
+.access-console th, .access-console td { padding: 10px; border-bottom: 1px solid #c0c7d63d; vertical-align: top; }
+.access-console .access-sessions { color: #a5f3fc; font-variant-numeric: tabular-nums; }

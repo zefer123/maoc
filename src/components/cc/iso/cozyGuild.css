@@ -1,0 +1,104 @@
+/* Scoped art direction: spatial views only, not report/approval/engine screens. */
+.guild-world, .cozy-room {
+  --cozy-ink: #eee1cf;
+  --cozy-muted: #bfb4ba;
+  --cozy-border: #c1a37570;
+  background: radial-gradient(ellipse at 48% 46%, #745b8d40, transparent 64%), radial-gradient(ellipse at 90% 80%, #435d7b24, transparent 55%), #111321;
+}
+.guild-world > .iso-grid, .cozy-room > .iso-grid { opacity: .1; background-image: linear-gradient(#d4bea31a 1px, transparent 1px), linear-gradient(90deg, #d4bea31a 1px, transparent 1px); }
+.guild-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.guild-astral-mist { animation: guild-mist-drift 18s ease-in-out infinite alternate; }
+@keyframes guild-mist-drift { from { transform: translateX(-8px); } to { transform: translateX(8px); } }
+.guild-island { width: 290px; height: 260px; }
+.guild-ground, .guild-props { position: absolute; left: 10px; top: 48px; pointer-events: none; overflow: visible; }
+.guild-ground { z-index: 0; }
+.guild-props { z-index: 1; }
+.guild-building { filter: drop-shadow(0 4px 0 #15132588); }
+.guild-island[data-team="command"] .guild-building { transform: scale(1.1); transform-origin: center bottom; }
+.guild-entrance { padding: 0 4px 3px; max-width: 282px; }
+.guild-entrance:hover { transform: translateY(-2px); }
+.guild-name { color: #f1e2c9; border: 1px solid #b99c7580; border-bottom: 3px solid #493d53; background: #30293fef; box-shadow: inset 0 1px #efd6ad26; border-radius: 3px; font-size: 11px; line-height: 1.6; letter-spacing: .07em; padding: 1px 8px; text-shadow: 0 1px #302c3b; }
+.guild-enter { font-size: 10px; color: #e0cfb8; line-height: 1.8; text-shadow: 0 1px #282635; }
+.guild-signal { background: #272735eb; border-color: #c6af8c40; box-shadow: 0 2px #282131; }
+.guild-signal > span { color: #e0d5c3; }
+.guild-agents { gap: 3px; margin-top: 4px; }
+.guild-agent { min-width: 44px; min-height: 62px; padding: 3px; }
+.guild-agent > span { color: #f2e5cf; font-size: 9px; letter-spacing: .025em; }
+.guild-agent > i { top: 4px; right: 4px; background: #89828b; }
+.guild-agent:hover, .guild-agent.is-selected { background: #e5cda625; border-color: #dfc498; box-shadow: 0 2px #433747; }
+.pixel-agent-body { animation-duration: 4s; }
+/* Recent activity is a badge, not a fabricated working pose. */
+.pixel-agent.has-recent-event { filter: drop-shadow(0 0 2px #b4d9c04d); }
+.guild-window { animation: none; }
+.guild-world-toolbar { padding: 7px; border: 1px solid var(--cozy-border); background: linear-gradient(115deg, #30263ded, #1c1d2eed); border-radius: 7px; box-shadow: inset 0 1px #e6d1ac18, 0 3px #13132155; }
+.guild-world-toolbar > span:first-child { background: #403446; color: #ecdbbb; border-color: #bca08170; letter-spacing: .08em; }
+.guild-motion-button, .guild-room-select, .cozy-agent-select, .cozy-room-select { background: #322b40; color: #f1e1c7; border: 1px solid #bba28080; border-radius: 4px; font-size: 11px; min-height: 44px; padding: 6px 10px; }
+.guild-room-select { display: block; max-width: 245px; }
+.guild-world-legend { color: #e0d4c5; background: #262533ed; border-color: #b79d7966; font-size: 10px; line-height: 1.7; max-width: calc(100% - 28px); }
+.guild-world-zoom { background: #242332ee; border: 1px solid var(--cozy-border); border-radius: 6px; padding: 5px; }
+.guild-world-zoom button, .cozy-room-zoom button { background: #342d42; color: #f0dfc2; border: 1px solid #b7a08380; border-radius: 4px; min-width: 44px; min-height: 44px; }
+.guild-world-zoom > span, .cozy-room-zoom > span { color: #dfd0bb; background: #302b39; }
+.guild-world button:focus-visible, .guild-world select:focus-visible, .cozy-room button:focus-visible, .cozy-room select:focus-visible { outline: 2px solid #ffe0a3; outline-offset: 3px; }
+.guild-world button:hover, .cozy-room-zoom button:hover { border-color: #edd3a3; }
+.cozy-room-scene { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.cozy-room-board { border-color: #c2a27a88; border-radius: 5px; background: #252238f5; box-shadow: inset 0 1px #dfc69f30, 0 4px #292331; max-width: 420px; }
+.cozy-room-board .section-label { color: #e4cfac; font-size: 10px; letter-spacing: .08em; }
+.cozy-room .guild-desk { border-radius: 5px; border-color: #c6a98488; background: linear-gradient(#65516c, #3e354b); box-shadow: inset 0 2px #e7c79c44, 0 6px #292435, 0 9px #17182655; min-width: 142px; }
+.cozy-room .guild-desk[aria-pressed="true"] { outline: 3px solid var(--guild-accent); outline-offset: 3px; }
+.cozy-room .guild-desk .text-slate-400 { color: #e0d1c4; }
+.cozy-room .cozy-desk-screen { background: #272c35; border: 3px solid #b09a82; box-shadow: 0 2px #342c34; }
+.cozy-room .guild-desk-avatar { border-bottom: 2px solid #cba77f; }
+.cozy-room .room-controls > span, .cozy-room .room-controls > button, .cozy-room .room-controls > div, .cozy-room .room-console-toggle { background: #302a3bed; border-color: #c3a58088; color: #e9d8bc; border-radius: 5px; box-shadow: 0 3px #19172366; }
+.cozy-room .room-controls > div { border-color: #bea17870; }
+.cozy-room .room-controls > div button { font-size: 9px; min-height: 44px; }
+.cozy-room .room-controls > button { min-height: 44px; }
+.cozy-room .room-controls > .dash-button.primary { background: #ddc18b; color: #292235; border-color: #f0dcae; }
+.cozy-room .room-console-panel { background: #252332f5; border-color: #bd9b7966; border-radius: 8px; }
+.cozy-room .room-console-panel > div:first-child { background: #433543; }
+.cozy-room .room-console-panel textarea { background: #252330; color: #eee1cf; border-color: #ac927d70; }
+.cozy-room .room-console-panel input { min-width: 0; }
+.cozy-room .room-console-toggle { max-width: calc(100% - 24px); min-height: 44px; }
+
+/* Status ink never replaces the department palette or section-menu colors. */
+.guild-world .realm-handoff, .cozy-room .realm-handoff { stroke: #67e8f9; stroke-width: 3; filter: drop-shadow(0 0 4px #22d3ee80); }
+.realm-handoff-packet { stroke: #cffafe; stroke-width: 4; animation: guild-packet 1.5s linear infinite; }
+.cozy-room[data-motion="off"] .realm-handoff-packet { opacity: 0; }
+.guild-island[data-spatial-state] .guild-building { filter: drop-shadow(0 0 8px var(--guild-accent)); }
+.guild-island[data-spatial-state] .guild-enter,
+.guild-agent[data-spatial-state], .cozy-room [data-spatial-state] > .realm-signal-text,
+.cozy-room [data-spatial-state] .realm-signal-text, .realm-desk-label[data-spatial-state] { color: #a5f3fc; }
+.guild-agent[data-spatial-state] > i { background: #67e8f9; box-shadow: 0 0 6px #22d3ee; }
+.cozy-room .guild-desk[data-spatial-state] { border-color: #67e8f9; }
+.cozy-room .guild-desk[data-spatial-state="review"] { border-color: #e3bc79; }
+.realm-desk-label { background: #252238; color: #d8cfdc; border-color: #b99c755c; }
+.realm-signal-text { color: #d8cfdc; font-size: 12px; font-weight: 700; }
+.realm-receipt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px clamp(12px, 3vw, 32px) 0; padding: 6px 12px; border: 1px solid #b99c7570; border-radius: 5px; background: #252238; color: #ead9bd; }
+.cozy-room-select { display: none; }
+.cozy-room-zoom { max-width: calc(100% - 32px); background: #252332ee; border: 1px solid #bea17b66; border-radius: 6px; padding: 5px; }
+.cozy-room[data-motion="off"] *, .cozy-room[data-motion="off"] *::before, .cozy-room[data-motion="off"] *::after { animation-play-state: paused !important; transition: none !important; }
+@media (min-width: 1100px) {
+  .cozy-room .room-controls { max-width: calc(100% - 420px); padding-right: 0; }
+  .cozy-room .room-console-panel { top: 70px; }
+}
+@media (max-width: 1099px) {
+  .cozy-room .room-controls { right: 12px; padding-right: 0; }
+  .cozy-room .room-controls > span { max-width: calc(100% - 225px); }
+  .cozy-room .room-console-panel { top: 190px; bottom: 78px; }
+}
+@media (max-width: 639px) {
+  .guild-world-toolbar { left: 8px; right: 8px; gap: 5px; padding: 6px; }
+  .guild-world-toolbar > span:first-child { font-size: 9px; }
+  .guild-motion-button, .guild-room-select, .cozy-agent-select, .cozy-room-select { min-height: 44px; font-size: 10px; padding: 6px 8px; }
+  .guild-world-toolbar .guild-room-select { max-width: 100%; min-width: 0; flex: 1; }
+  .guild-world-legend { bottom: 63px; font-size: 9px; }
+  .guild-world-zoom { bottom: 8px; right: 8px; }
+  .cozy-room .room-controls { left: 8px; right: 8px; gap: 6px; }
+  .cozy-room .room-controls > span { max-width: 100%; width: 100%; font-size: 9px; padding: 7px; }
+  .cozy-room .room-controls > div { display: none; }
+  .cozy-room-select { display: block; max-width: 155px; }
+  .cozy-agent-select { max-width: 140px; }
+  .dash-spatial-host .cozy-room .room-console-panel { top: 170px; bottom: 140px; }
+  .dash-spatial-host .cozy-room .room-console-toggle { bottom: 8px; right: 8px; font-size: 9px; }
+  .cozy-room-zoom { bottom: 55px; left: 8px; max-width: calc(100% - 16px); gap: 4px; }
+  .cozy-room-zoom button { padding: 6px 9px; }
+}

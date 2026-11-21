@@ -1,0 +1,46 @@
+name: Verify MAOC
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26.13.1'
+          package-manager-cache: false
+      - name: Install locked dependencies
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm --prefix server ci --ignore-scripts --no-audit --no-fund
+      - name: Run Node tests and production build
+        run: npm run verify
+      - name: Run isolated Chromium regressions
+        run: |
+          $env:MAOC_CHROME = (Get-Item -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe').GetValue('')
+          if (-not $env:MAOC_CHROME -or -not (Test-Path -LiteralPath $env:MAOC_CHROME -PathType Leaf)) {
+            throw 'Preinstalled Chrome executable was not found'
+          }
+          foreach ($driver in @('sqlite', 'atomic-json')) {
+            $evidence = Join-Path $env:RUNNER_TEMP "maoc-browser-$driver"
+            New-Item -ItemType Directory -Path $evidence | Out-Null
+            $env:MAOC_TEST_STORAGE_DRIVER = $driver
+            $env:MAOC_DASHBOARD_EVIDENCE_DIR = $evidence
+            $env:MAOC_DASHBOARD_REPORT = Join-Path $evidence 'dashboard.json'
+            npm run test:dashboard:browser
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          $env:MAOC_DASHBOARD_REPORT = Join-Path $env:RUNNER_TEMP 'maoc-root-error.json'
+          npm run test:dashboard:browser -- --root-error-only

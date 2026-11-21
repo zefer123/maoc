@@ -1,0 +1,418 @@
+/* Shared dashboard navigation, Overview and department workspaces. No scene/engine changes. */
+
+/* B2 measured analytics. Scoped presentation only; preserve shell and runtime contracts. */
+.performance-dashboard { min-width: 0; }
+.performance-dashboard .dash-caption { overflow-wrap: anywhere; }
+.performance-filters { display: flex; flex-wrap: wrap; gap: 16px; margin: 20px 0; }
+.performance-filters .dash-filter-label { display: grid; align-content: start; gap: 8px; margin: 0; flex: 1 1 180px; }
+.performance-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
+.performance-summary .performance-metric { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 20px; border-top: 2px solid var(--section-line); }
+.performance-metric > p { font-size: 13px; color: var(--guild-text); }
+.performance-metric > strong { font: 27px var(--guild-mono); color: var(--section-accent); overflow-wrap: anywhere; }
+.performance-metric > small { font-size: 12px; line-height: 1.8; color: var(--guild-muted); }
+.performance-dashboard .performance-coverage { margin: 0 0 24px; font-size: 12px; line-height: 1.9; color: var(--guild-muted); }
+.performance-coverage h3, .performance-table-title { font-size: 15px; font-weight: 600; color: var(--guild-text); margin-bottom: 10px; }
+.performance-coverage p + p { margin-top: 7px; }
+.performance-table { overflow-x: auto; border: 1px solid var(--guild-border); border-radius: 5px; }
+.performance-table table { width: 100%; min-width: 1120px; text-align: left; font-size: 12px; }
+.performance-table th, .performance-table td { padding: 12px; }
+.performance-table thead { background: #222333; color: var(--guild-text); }
+.performance-table th { white-space: nowrap; }
+.performance-table tbody tr { border-top: 1px solid var(--guild-border); }
+.performance-table tbody th { position: sticky; left: 0; background: #1c1c2a; z-index: 1; }
+.performance-table tbody th button { color: var(--section-accent); text-decoration: underline; min-height: 44px; text-underline-offset: 4px; }
+.performance-table tbody th small { display: block; color: var(--guild-muted); font-weight: 400; }
+.performance-table td { font-family: var(--guild-mono); color: var(--guild-text); }
+.performance-cell-label { display: none; }
+.performance-evidence-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 1399px) {
+  .performance-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .performance-summary { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .performance-summary .performance-metric { padding: 16px; }
+  .performance-table { overflow: visible; border: 0; }
+  .performance-table table, .performance-table tbody { display: block; min-width: 0; }
+  .performance-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .performance-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; padding: 12px; border: 1px solid var(--guild-border); border-radius: 5px; background: #1c1c2a; margin-bottom: 12px; }
+  .performance-table tbody th { grid-column: 1 / -1; position: static; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 8px; }
+  .performance-table td { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 10px 0; border-top: 1px solid var(--guild-border); overflow-wrap: anywhere; }
+  .performance-table td:last-child { grid-column: 1 / -1; }
+  .performance-cell-label { display: block; font: 12px var(--guild-font); color: var(--guild-muted); }
+}
+.dash-shell {
+  --menu-silver: #bbb5cc;
+  --menu-lavender: #d4c5e9;
+  --menu-gold: #dec390;
+  /* Realm-inspired navigation identity. Independent of team artwork and task state. */
+  --realm-lavender: #cbb0f5;
+  --realm-amber: #edc078;
+  --realm-blue: #8fc5f5;
+  --realm-moss: #a8d3a0;
+  --realm-magenta: #eaa0cf;
+  --realm-silver: #c0c7d6;
+  --section-accent: var(--realm-silver);
+  --section-tint: #c0c7d61a;
+  --section-line: #c0c7d666;
+  --guild-ink: #11121d;
+  --guild-panel: #1c1c2a;
+  --guild-border: #b6a28a38;
+  --guild-muted: #b3acbe;
+  --guild-text: #eee9df;
+  --guild-font: 'Segoe UI', Tahoma, 'Noto Sans Thai', sans-serif;
+  --guild-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--guild-font);
+  color: var(--guild-text);
+  grid-template-columns: 244px minmax(0, 1fr);
+  background: radial-gradient(ellipse at 45% 0, #46405016, transparent 60%), var(--guild-ink);
+}
+.dash-shell[data-dashboard-section="overview"], .dash-shell [data-section="overview"] { --section-accent: var(--realm-lavender); --section-tint: #cbb0f51a; --section-line: #cbb0f566; }
+.dash-shell[data-dashboard-section="missions"], .dash-shell [data-section="missions"] { --section-accent: var(--realm-amber); --section-tint: #edc0781a; --section-line: #edc07866; }
+.dash-shell[data-dashboard-section="teams"], .dash-shell [data-section="teams"] { --section-accent: var(--realm-blue); --section-tint: #8fc5f51a; --section-line: #8fc5f566; }
+.dash-shell[data-dashboard-section="library"], .dash-shell [data-section="library"] { --section-accent: var(--realm-moss); --section-tint: #a8d3a01a; --section-line: #a8d3a066; }
+.dash-shell[data-dashboard-section="activity"], .dash-shell [data-section="activity"] { --section-accent: var(--realm-magenta); --section-tint: #eaa0cf1a; --section-line: #eaa0cf66; }
+.dash-shell[data-dashboard-section="settings"], .dash-shell [data-section="settings"] { --section-accent: var(--realm-silver); --section-tint: #c0c7d61a; --section-line: #c0c7d666; }
+.dash-shell .dash-nav-item { --nav-accent: var(--section-accent); color: var(--nav-accent); }
+.dash-shell .dash-nav-item > svg { color: inherit; filter: none; }
+.dash-shell .dash-nav-item:hover { color: var(--nav-accent); background: var(--section-tint); }
+.dash-shell .dash-nav-item.is-active { color: var(--nav-accent); border-color: var(--section-line); background: linear-gradient(var(--section-tint), var(--section-tint)), #1c1c2a; box-shadow: inset 3px 0 var(--nav-accent); font-weight: 650; }
+.dash-shell .dash-nav-item:focus-visible { outline-color: var(--nav-accent); }
+.dash-shell .dash-brand-mark { color: var(--menu-gold); background: linear-gradient(145deg, #55406155, #282334); border-color: #c1a37566; box-shadow: 0 3px #080912; }
+.dash-shell .dash-notification-dot { color: #edddb9; border-color: #c1a37570; background: #403548; }
+.dash-shell .dash-sidebar-caption { color: #b9a6cd; }
+.dash-shell :focus-visible { outline-color: #e4ca93; }
+.dash-shell .dash-content:focus-visible { outline: 1px solid #c4a87866; outline-offset: -2px; }
+
+/* Guild shell: readable work typography, pixel-cut insignia, restrained material depth. */
+.dash-shell .dash-topbar { padding: 12px 22px; gap: 20px; background: #171722f5; border-bottom: 1px solid var(--guild-border); box-shadow: 0 3px 0 #090a12; }
+.dash-shell .dash-brand { min-width: 200px; font-family: var(--guild-mono); font-size: 23px; letter-spacing: .1em; gap: 12px; }
+.dash-shell .dash-brand small { font-family: var(--guild-font); color: #c2b49e; font-size: 8px; letter-spacing: .18em; margin-top: 3px; }
+.dash-shell .dash-brand-mark { width: 42px; height: 48px; border-radius: 2px; border-color: #b99e705c; background: #262333; box-shadow: inset 0 0 0 3px #11121d, 0 3px #080912; }
+.dash-brand-mark svg { width: 29px; height: 34px; }
+.guild-location { flex-shrink: 0; border-left: 1px solid var(--guild-border); padding-left: 20px; }
+.guild-location > span { display: flex; align-items: center; gap: 6px; color: var(--guild-muted); font-size: 10px; letter-spacing: .06em; }
+.guild-location strong { display: block; color: var(--section-accent); font-size: 14px; font-weight: 600; margin-top: 3px; }
+.dash-shell .dash-search { width: min(380px, 32%); min-height: 44px; border-radius: 6px; background: #10111b; border-color: #80758940; box-shadow: inset 0 2px 3px #0003; }
+.dash-shell .dash-search input { font-family: var(--guild-font); font-size: 13px; }
+.dash-shell .dash-connection { font-family: var(--guild-mono); font-size: 10px; }
+.dash-shell .dash-sidebar { gap: 25px; padding: 24px 15px 16px; background: #161621; border-color: var(--guild-border); }
+.guild-workspace-label { display: flex; gap: 10px; align-items: center; padding: 0 11px 20px; border-bottom: 1px solid var(--guild-border); }
+.guild-workspace-label > span { color: #e1c68c; font-size: 22px; }
+.guild-workspace-label strong { font-size: 14px; font-weight: 600; color: #eee4ce; }
+.guild-workspace-label small { display: block; font-family: var(--guild-mono); font-size: 8px; letter-spacing: .08em; color: #a69baf; margin-top: 5px; }
+.guild-nav-group .dash-sidebar-caption { font-family: var(--guild-mono); font-size: 9px; letter-spacing: .12em; margin-bottom: 10px; color: #b4a0c4; }
+.guild-nav-group nav { display: grid; gap: 5px; }
+.dash-shell .dash-sidebar .dash-nav-item { font-size: 14px; font-weight: 500; min-height: 48px; padding: 11px 12px; border-radius: 5px; }
+.dash-shell .dash-sidebar .dash-nav-item.is-active { font-weight: 650; box-shadow: inset 3px 0 var(--nav-accent), inset 0 1px #ffffff0c, 0 3px #090a1244; }
+.guild-subnav { display: grid; gap: 2px; border-left: 1px solid #bba1d347; margin: 8px 0 8px 23px; padding-left: 12px; }
+.guild-subnav button { display: flex; align-items: center; gap: 9px; text-align: left; min-height: 44px; padding: 7px 6px; font-size: 12px; color: #b8adc8; border-radius: 3px; }
+.guild-subnav button > span { width: 4px; height: 4px; flex-shrink: 0; background: #7c6a91; }
+.guild-subnav button:hover { color: var(--section-accent); background: var(--section-tint); }
+.guild-subnav button[aria-current] { color: var(--section-accent); background: var(--section-tint); font-weight: 600; }
+.guild-subnav button[aria-current] > span { background: var(--section-accent); box-shadow: 0 0 0 2px var(--section-tint); }
+.guild-sidebar-footer { margin-top: auto; display: grid; gap: 14px; padding-top: 4px; }
+.guild-registry { border: 1px solid #b6a28a2e; background: #1e1d2a; border-radius: 4px; padding: 14px; box-shadow: inset 0 2px #e7c68c0a; }
+.guild-registry > span { font: 8px var(--guild-mono); letter-spacing: .14em; color: #baa88b; }
+.guild-registry > div { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 10px; }
+.guild-registry strong { font: 20px var(--guild-mono); color: #e4d3b2; }
+.guild-registry small { font: 11px var(--guild-font); color: #c4bacd; }
+.guild-registry i { width: 1px; height: 18px; background: var(--guild-border); }
+.guild-registry p, .guild-safety-note { font-size: 10px; line-height: 1.8; color: #aaa1b5; }
+.guild-registry p { margin-top: 9px; }
+.guild-safety-note { padding: 0 12px; }
+.dash-shell .dash-page-heading h1 { font-family: var(--guild-font); text-shadow: none; letter-spacing: -.02em; font-weight: 650; color: var(--section-accent); }
+.dash-shell .dash-eyebrow { font-family: var(--guild-mono); font-size: 9px; letter-spacing: .14em; color: var(--section-accent); }
+.dash-shell .team-workspace .dash-eyebrow { color: var(--team-accent); }
+.dash-shell .dash-description { font-size: 14px; color: #b5adbf; }
+.dash-shell .dash-button { min-height: 44px; font-family: var(--guild-font); font-size: 13px; font-weight: 600; color: #ddd4e4; border-radius: 4px; border-color: #a593b34d; background: #272331; box-shadow: inset 0 1px #ffffff08, 0 3px #090912; }
+.dash-shell .dash-button:hover { background: #373042; border-color: #cfb8dd8c; transform: translateY(-1px); }
+.dash-shell .dash-button.primary { color: #292235; background: #ddc18b; border-color: #f0dcae; box-shadow: inset 0 1px #fff5dd7a, 0 3px #6e583d; }
+.dash-shell .dash-button.primary:hover { background: #edd4a5; border-color: #fff1cf; }
+.dash-shell .dash-button:active { transform: translateY(2px); box-shadow: 0 1px #090912; }
+.dash-shell .dash-button.danger { color: #f0afb7; border-color: #d586964d; }
+.dash-shell .dash-tabs { gap: 5px; padding: 5px; border: 1px solid #9887a23d; background: #14141f; border-radius: 5px; width: fit-content; max-width: 100%; overflow-x: auto; }
+.dash-shell .dash-tabs > button { min-height: 44px; padding: 9px 16px; font-family: var(--guild-font); font-size: 13px; border: 1px solid transparent; color: #bdb1ca; background: transparent; border-radius: 3px; white-space: nowrap; }
+.dash-shell .dash-tabs > button:hover { color: #eee1d1; background: #b8a2cb0a; }
+.dash-shell .dash-tabs > button.is-active { color: var(--section-accent); border-color: var(--section-line); background: linear-gradient(var(--section-tint), var(--section-tint)), #1c1c2a; box-shadow: inset 0 -2px var(--section-accent), 0 2px #080912; }
+.dash-shell .dash-surface { background: var(--guild-panel); border-color: #a996b133; border-radius: 6px; box-shadow: inset 0 1px #e4d5f009, 0 4px #08091155; }
+.dash-shell .dash-card-heading h2 { font-size: 17px; color: #eee8df; }
+.dash-shell .dash-card-heading > button { min-height: 44px; font-size: 12px; color: #dfc38f; }
+.dash-shell .dash-caption { color: #aaa1b6; }
+.dash-shell .dash-mobile-nav { background: #191824; border-color: #baa27b45; }
+.guild-mobile-menu-panel { position: relative; margin: 12px; padding: 18px; border: 1px solid #a78cbd5c; border-radius: 5px; background: #1b1928; max-height: calc(100% - 24px); overflow-y: auto; box-shadow: 0 10px 50px #0006; }
+.guild-mobile-menu-title { font-size: 16px; font-weight: 600; color: #ebd8b6; margin-bottom: 12px; }
+
+/* Department dossiers: distinct work surfaces, not another copy of the world map. */
+.dash-page.team-section-header { padding-bottom: 0; }
+.team-section-header .dash-tabs { margin-bottom: 0; }
+.dash-page.team-workspace { padding-top: 12px; }
+.team-directory-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.team-directory-toolbar > div > p:last-child { margin-top: 9px; font-size: 12px; color: #b6adbf; line-height: 1.9; }
+.team-directory-toolbar .dash-filter-label { margin: 0; flex-shrink: 0; }
+.team-directory-card { position: relative; border-top: 2px solid var(--team-accent); display: flex; flex-direction: column; gap: 20px; }
+.team-directory-card-heading { border-bottom: 1px solid #b7a08826; padding-bottom: 18px; }
+.team-department-id { display: block; font-size: 9px; letter-spacing: .14em; color: var(--team-accent); }
+.team-directory-card-heading h2 { margin-top: 9px; font-size: 19px; color: var(--team-accent); letter-spacing: .025em; }
+.team-directory-card-heading p { margin-top: 6px; color: #b6adbf; font-size: 11px; }
+.team-card-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #b7a08826; }
+.team-card-counts > div { display: flex; gap: 8px; align-items: center; justify-content: space-between; min-width: 0; }
+.team-card-counts dt { font-size: 10px; color: #b6adbf; }
+.team-card-counts dd { font-size: 17px; color: var(--team-accent); font-variant-numeric: tabular-nums; }
+.team-card-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px; padding-top: 4px; }
+.team-directory .dash-button, .team-workspace .dash-button { min-height: 44px; }
+.team-directory .dash-agent-row, .team-workspace .dash-agent-row { min-height: 68px; background: #0c0b1699; }
+.team-directory .dash-agent-row:hover, .team-workspace .dash-agent-row:hover { border-color: var(--team-accent); }
+.team-directory .pixel-agent, .team-workspace .pixel-agent { flex-shrink: 0; }
+.team-agent-signal { flex-shrink: 0; font-size: 9px; color: #c3b6cd; border-left: 1px solid #c3b6cd26; padding-left: 10px; }
+.team-breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; color: #a99bb9; font-size: 11px; margin-bottom: 18px; }
+.team-breadcrumb button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: #e0c99e; }
+.team-breadcrumb [aria-current] { color: var(--team-accent); }
+.team-workspace-hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 28px; border: 1px solid #b7a08840; border-top: 2px solid var(--team-accent); border-radius: 9px 9px 0 0; background: linear-gradient(115deg, #282031, #141321 75%); }
+.team-workspace-identity { display: flex; align-items: center; gap: 22px; min-width: 0; }
+.team-workspace-identity h1 { font-size: clamp(22px, 2.4vw, 34px); font-weight: 600; letter-spacing: .015em; margin-top: 10px; overflow-wrap: anywhere; color: #f0e6f4; }
+.team-workspace-identity p:last-child { font-size: 12px; line-height: 1.9; margin-top: 8px; color: #bfb1cb; }
+.team-crest { display: grid; place-items: center; width: 76px; height: 88px; flex-shrink: 0; color: var(--team-accent); background: #15121f; border: 1px solid var(--team-accent); border-radius: 8px 8px 30px 30px; box-shadow: inset 0 0 0 5px #282131, 0 5px 0 #08070f; }
+.team-workspace-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
+.team-workspace-actions > span { display: flex; align-items: center; gap: 7px; font-size: 10px; color: #c1b4cd; }
+.team-workspace-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #b7a08840; border-top: 0; border-radius: 0 0 9px 9px; background: #171322; }
+.team-workspace-stats > div { padding: 18px 22px; border-right: 1px solid #b7a08826; min-width: 0; }
+.team-workspace-stats > div:last-child { border: 0; }
+.team-workspace-stats dt { color: #bfb1cb; font-size: 11px; }
+.team-workspace-stats dd { margin-top: 6px; font-size: 28px; font-variant-numeric: tabular-nums; color: var(--team-accent); }
+.team-workspace-stats p { margin-top: 5px; font-size: 9px; line-height: 1.7; color: #aa9bb9; }
+.team-data-note { font-size: 10px; line-height: 1.9; margin: 13px 0 26px; color: #b7a9c4; }
+.team-workspace-columns { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: 22px; align-items: start; }
+.team-workspace-main, .team-workspace-aside { display: grid; gap: 22px; min-width: 0; }
+.team-workspace-section { min-width: 0; }
+.team-workspace-section h2 { color: #e4d7eb; font-size: 15px; }
+.team-workspace-section .dash-card-heading > svg { color: var(--team-accent); }
+.team-section-count { font-size: 10px; color: #b9abc7; }
+.team-section-description { font-size: 11px; line-height: 1.9; color: #b3a6c2; margin: -4px 0 18px; }
+.team-linked-artifacts { display: grid; gap: 12px; }
+.team-linked-artifacts > button { display: flex; align-items: flex-start; gap: 13px; min-height: 84px; text-align: left; padding: 16px; border: 1px solid #b7a08833; border-radius: 6px; background: #0f0d1899; }
+.team-linked-artifacts > button:hover { border-color: var(--team-accent); }
+.team-linked-artifacts > button > svg { color: var(--team-accent); flex-shrink: 0; margin-top: 2px; }
+.team-linked-artifacts > button > span { flex: 1; min-width: 0; }
+.team-linked-artifacts strong { display: block; overflow-wrap: anywhere; font-size: 12px; line-height: 1.8; color: #e3d9eb; }
+.team-linked-artifacts small { display: block; margin-top: 5px; font-size: 10px; color: #b6a7c3; }
+.team-linked-artifacts p { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; font-size: 11px; line-height: 1.8; margin-top: 8px; color: #bfb3cb; }
+.team-empty-copy { font-size: 12px; color: #bfb3cb; line-height: 1.9; }
+.team-signals { display: grid; gap: 14px; }
+.team-signals li { padding-left: 14px; border-left: 2px solid #b7a08840; }
+.team-signals li > span { font-size: 9px; letter-spacing: .06em; color: var(--team-accent); overflow-wrap: anywhere; }
+.team-signals p { margin-top: 6px; line-height: 1.8; font-size: 11px; color: #c9bed4; overflow-wrap: anywhere; }
+.team-signals button { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; color: #e0c99e; font-size: 10px; }
+.team-scope-note { display: flex; gap: 12px; color: #bbaccc; font-size: 10px; line-height: 1.9; padding: 0 8px; }
+.team-scope-note svg { flex-shrink: 0; color: #d4bf98; margin-top: 2px; }
+@media (max-width: 1199px) {
+  .team-workspace-columns { grid-template-columns: minmax(0, 1fr); }
+  .team-workspace-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .team-scope-note { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .team-directory-toolbar, .team-workspace-hero { flex-direction: column; align-items: stretch; }
+  .team-workspace-hero { padding: 20px; gap: 20px; }
+  .team-workspace-identity { gap: 14px; }
+  .team-crest { width: 54px; height: 66px; }
+  .team-workspace-actions { align-items: flex-start; }
+  .team-workspace-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .team-workspace-stats > div { padding: 16px; }
+  .team-workspace-stats > div:nth-child(2) { border-right: 0; }
+  .team-workspace-stats > div:nth-child(-n+2) { border-bottom: 1px solid #b7a08826; }
+  .team-workspace-aside { grid-template-columns: minmax(0, 1fr); }
+  .team-agent-signal { font-size: 8px; padding-left: 7px; }
+  .team-card-counts > div { flex-direction: column; align-items: flex-start; gap: 5px; }
+}
+
+.command-bridge { padding: 26px 30px 32px; max-width: 1760px; }
+.guild-bridge-intro { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 24px; }
+.guild-bridge-title { display: flex; align-items: center; gap: 15px; min-width: 0; }
+.guild-page-seal { display: grid; place-items: center; width: 54px; height: 62px; flex-shrink: 0; border: 1px solid #ba9e6959; background: #2a2534; color: #e2c58c; box-shadow: inset 0 0 0 4px #191824, 0 4px #070912; clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 12px), 50% 100%, 0 calc(100% - 12px), 0 6px); }
+.guild-bridge-title h1 { font-size: clamp(25px, 2.1vw, 33px); line-height: 1.2; letter-spacing: -.035em; color: #f2ecdf; font-weight: 650; margin-top: 8px; }
+.guild-bridge-title h1 > span { display: block; font-size: 13px; line-height: 1.5; font-weight: 400; letter-spacing: 0; color: #bcb2c8; margin-top: 5px; }
+.guild-bridge-actions { display: flex; align-items: center; gap: 16px; }
+.guild-local-label { display: inline-flex; align-items: center; gap: 7px; font: 8px var(--guild-mono); letter-spacing: .1em; color: #b8acbf; white-space: nowrap; }
+.guild-local-label > span { width: 5px; height: 5px; background: #ceb684; }
+.command-bridge .overview-summary { gap: 14px; border: 0; background: none; overflow: visible; }
+.command-bridge .overview-summary .dash-metric { --metric-accent: #aabde3; position: relative; display: grid; grid-template: auto auto auto / minmax(0, 1fr); min-width: 0; min-height: 140px; gap: 8px; padding: 17px 19px; border: 1px solid #a18eaf40; border-top: 2px solid var(--metric-accent); border-radius: 5px; background: #22202f; box-shadow: inset 0 1px #f0e1ff08, 0 4px #0809126b; }
+.command-bridge .overview-summary .dash-metric[data-metric="attention"] { --metric-accent: #e4c287; background: #292431; }
+.command-bridge .overview-summary .dash-metric[data-metric="completed"] { --metric-accent: #a6cbb0; }
+.command-bridge .overview-summary .dash-metric[data-metric="failed"] { --metric-accent: #d5a4ad; }
+.command-bridge .overview-summary .dash-metric::after { content: ''; position: absolute; top: 7px; right: 7px; width: 3px; height: 3px; background: #b9a18a7a; box-shadow: -5px 0 #b9a18a38; }
+.command-bridge .overview-summary .dash-metric:hover { background: #302938; border-color: var(--metric-accent); transform: translateY(-2px); }
+.command-bridge .overview-summary .dash-metric > span { grid-column: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.command-bridge .overview-summary .guild-metric-label { font-size: 13px; font-weight: 600; color: #e5dce9; }
+.guild-metric-label svg { color: var(--metric-accent); flex-shrink: 0; }
+.command-bridge .overview-summary .dash-metric strong { grid-column: 1; grid-row: 2; margin: 0; font-family: var(--guild-mono); font-size: 33px; font-weight: 500; line-height: 1.2; color: var(--metric-accent); font-variant-numeric: tabular-nums; }
+.command-bridge .overview-summary .guild-metric-detail { font-size: 11px; color: #b5abbe; justify-content: space-between; }
+.command-bridge .overview-summary-caption { margin: 10px 0 21px; font-size: 10px; color: #b3a8bd; }
+.command-bridge .dash-attention { margin-bottom: 20px; padding: 14px 17px; background: #6b51231a; border-color: #d4af654d; border-radius: 5px; }
+.command-bridge .dash-attention small { margin-top: 4px; }
+.guild-operations-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; align-items: stretch; gap: 20px; }
+.command-bridge .bridge-realm { border-color: #a08baf4d; border-radius: 6px; min-width: 0; background: #131420; box-shadow: inset 0 1px #e7c68c0a, 0 4px #08091266; }
+.command-bridge .bridge-world-host { height: clamp(450px, calc(100dvh - 440px), 650px); }
+.command-bridge .bridge-realm-heading { padding: 12px 16px; color: #e4d8ec; border-color: #b7a08835; background: #252131; font-family: var(--guild-mono); font-size: 11px; letter-spacing: .12em; }
+.command-bridge .bridge-realm-heading small { display: block; margin: 4px 0 0; font-family: var(--guild-font); font-size: 11px; color: #b7acc4; }
+.command-bridge .bridge-realm-heading i { color: #dec390; }
+.command-bridge .bridge-realm-heading .dash-button { min-height: 44px; font-size: 12px; }
+.guild-realm-footer { display: flex; justify-content: space-between; gap: 10px; padding: 10px 15px; font-size: 10px; color: #b3a6bf; border-top: 1px solid #a18eaf2b; }
+.dash-shell .guild-mission-board { display: flex; flex-direction: column; padding: 20px; border-top: 2px solid #baa078; }
+.guild-mission-board .dash-card-heading { margin-bottom: 8px; }
+.guild-mission-board h2, .guild-deliverables h2 { margin-top: 7px; }
+.guild-board-caption { color: #b5a9c2; font-size: 12px; line-height: 1.8; padding-bottom: 18px; border-bottom: 1px solid #ac94ba26; margin-bottom: 16px; }
+.guild-mission-list { display: grid; gap: 12px; }
+.guild-mission-board .dash-task-card { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px; background: #151620; border: 1px solid #a18eaf30; border-radius: 4px; }
+.guild-mission-board .dash-task-card > div:last-child { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+.guild-mission-board .dash-task-card p { white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: 13px; line-height: 1.65; }
+.guild-mission-board .dash-empty { padding: 24px 0; border: 0; background: none; }
+.guild-mission-board .dash-empty h3 { color: #e4d8ec; font-size: 15px; }
+.guild-mission-board .dash-empty p { font-size: 13px; color: #b6aabd; }
+.guild-board-inbox { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: auto; padding: 17px 0 0; border-top: 1px solid #ac94ba26; color: #d9bd8a; min-height: 78px; text-align: left; }
+.guild-board-inbox > span { flex: 1; min-width: 0; }
+.guild-board-inbox strong { display: block; font-size: 13px; font-weight: 500; }
+.guild-board-inbox small { display: block; font-size: 11px; color: #b6aabd; margin-top: 5px; }
+.guild-workbench { display: grid; grid-template-columns: minmax(160px, .8fr) repeat(3, minmax(0, 1fr)); gap: 16px; margin: 25px 0; padding: 20px 0; border-top: 1px solid #b6a28a29; border-bottom: 1px solid #b6a28a29; align-items: center; }
+.guild-workbench h2 { font-size: 17px; color: #e5dbca; margin-top: 7px; }
+.guild-workbench button { display: flex; align-items: center; gap: 11px; min-width: 0; min-height: 72px; text-align: left; padding: 12px; border: 1px solid #a18eaf29; border-radius: 4px; background: #1f1d2b; }
+.guild-workbench button:hover { border-color: #d4b77b80; background: #292333; }
+.guild-shortcut-icon { display: grid; place-items: center; width: 35px; height: 39px; flex-shrink: 0; background: #b9a3ce10; border: 1px solid #b9a3ce33; color: #d3bcdf; border-radius: 2px; }
+.guild-workbench button > span:nth-child(2) { flex: 1; min-width: 0; }
+.guild-workbench strong { display: block; font-size: 13px; color: #eee2d0; font-weight: 600; }
+.guild-workbench small { display: block; font-size: 11px; line-height: 1.6; color: #b5a7c0; margin-top: 4px; }
+.guild-workbench button > svg { color: #d9c08e; flex-shrink: 0; }
+.guild-deliverables .dash-result-card { background: #151620; border-color: #a18eaf30; min-width: 0; border-radius: 4px; }
+.guild-deliverables .dash-result-card h3 { color: #e6dce9; font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
+.guild-deliverables .dash-result-card p { color: #b3a6bf; font-family: var(--guild-mono); font-size: 10px; }
+.guild-result-link { display: flex; align-items: center; gap: 8px; color: #dfc38f; font-size: 12px; margin-top: 18px; }
+.guild-archive-empty { display: flex; gap: 18px; align-items: center; padding: 15px 0; color: #c5acd6; }
+.guild-archive-empty h3 { font-size: 15px; color: #dfd4e8; margin-bottom: 6px; }
+.guild-archive-empty p { font-size: 13px; color: #b6aabd; line-height: 1.8; }
+.guild-archive-empty svg { flex-shrink: 0; }
+.guild-field-guide { margin-top: 24px; padding: 16px 20px; border: 1px solid #a18eaf2b; border-radius: 4px; background: #1a1925; }
+.guild-field-guide summary { display: flex; align-items: center; gap: 10px; color: #d9c9e2; font-size: 13px; cursor: pointer; min-height: 44px; }
+.guild-field-guide summary::after { content: '+'; margin-left: auto; font: 20px var(--guild-mono); color: #d9bc89; }
+.guild-field-guide[open] summary::after { content: '−'; }
+.guild-field-guide summary > span { color: #afa3bc; font-size: 12px; }
+.guild-field-guide .dash-guide { display: flex; flex-direction: row; gap: 22px; margin: 20px 0; }
+.guild-field-guide .dash-guide li { flex: 1; }
+
+/* Reserved viewport footer: a collapsed dock can never cover the map/content. */
+.dash-shell.has-overview-dock { grid-template-rows: 76px minmax(0, 1fr) 58px; }
+.has-overview-dock > .dash-sidebar { grid-row: 2 / 4; }
+.overview-dock-slot { grid-row: 3; grid-column: 2; position: relative; min-width: 0; display: flex; justify-content: flex-end; align-items: center; padding: 5px 24px; border-top: 1px solid #b7a08826; background: #100e1bea; z-index: 25; }
+.overview-dock { display: flex; align-items: center; max-width: 100%; border: 1px solid #b7a08866; border-radius: 6px; background: #292234; color: #d6cbdf; box-shadow: inset 0 1px #e3cda51a; }
+.overview-dock > button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 12px; font-size: 11px; border-left: 1px solid #b7a08835; }
+.overview-dock > button[aria-expanded="true"] { color: #f0d7a6; background: #ac8a5830; }
+.overview-dock > button:hover { background: #b5a0d014; }
+.overview-dock-connection { padding: 0 12px; }
+.overview-backend { display: inline-flex; align-items: center; gap: 7px; color: #e4c48c; font-size: 10px; white-space: nowrap; }
+.overview-backend > i { width: 6px; height: 6px; background: #d4ac6d; border-radius: 50%; flex-shrink: 0; }
+.overview-backend.is-connected { color: #b0d0bf; }
+.overview-backend.is-connected > i { background: #83c3a3; }
+.overview-unread { min-width: 18px; padding: 1px 4px; border-radius: 4px; color: #f0d7a6; background: #b8955d25; font-size: 10px; text-align: center; }
+.overview-feedback-stack { position: absolute; bottom: calc(100% + 8px); right: 24px; width: min(380px, calc(100vw - 272px)); max-height: calc(100dvh - 164px); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.overview-feedback-stack > * { pointer-events: auto; }
+.overview-feedback-stack .dash-toast { position: relative; inset: auto; width: 100%; min-height: 0; max-height: 25dvh; overflow-y: auto; padding: 12px; border-radius: 7px; border-color: #b7a08866; background: #211e30fa; flex-shrink: 0; }
+.overview-feedback-stack .dash-toast strong, .overview-feedback-stack .dash-toast button:not(.dash-icon-button) { color: #e1c99b; }
+.overview-dock-panel { min-height: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #b7a08877; background: #191624fa; color: #e4dbe9; border-radius: 8px; box-shadow: 0 12px 40px #0008; scrollbar-gutter: stable; }
+.overview-dock-panel > header { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 16px; border-bottom: 1px solid #b7a08833; background: #302639; }
+.overview-dock-panel h2 { color: #ecd6b1; font-size: 13px; font-weight: 600; }
+.overview-status-body, .overview-notices-body { padding: 14px; }
+.overview-backend-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.overview-dock-caption { margin: 10px 0; color: #b8aec4; font-size: 10px; line-height: 1.8; }
+.overview-status-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.overview-status-counts > button { display: flex; align-items: center; gap: 7px; min-height: 52px; padding: 10px; border: 1px solid #ac947347; border-radius: 5px; background: #b5a0d00a; font-size: 11px; }
+.overview-status-counts > button strong { margin-left: auto; color: #e4c48c; }
+.overview-dock-warning { padding: 10px; border: 1px solid #dfbd7e55; border-radius: 5px; color: #e4c48c; font-size: 11px; line-height: 1.8; }
+.overview-notice-list { display: flex; flex-direction: column; gap: 8px; }
+.overview-notice-list > li { padding: 10px; border: 1px solid #a48bb33b; border-radius: 5px; background: #30263d38; }
+.overview-notice-list > li[data-read="true"] { border-color: #a48bb31f; background: transparent; }
+.overview-notice-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 9px; color: #b8aec4; }
+.overview-notice-meta b { color: #e4c48c; font-weight: 500; margin-left: 7px; }
+.overview-notice-meta time { white-space: nowrap; }
+.overview-notice-list > li > p { margin: 8px 0 3px; color: #e1d9e8; font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.overview-notice-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; }
+.overview-notice-actions > button, .overview-view-all { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: #e1c99b; font-size: 10px; }
+.overview-view-all { width: 100%; justify-content: flex-end; margin-top: 8px; border-top: 1px solid #b7a08833; }
+.overview-dock-empty { padding: 20px 0; font-size: 12px; color: #b8aec4; }
+.overview-dock-slot :focus-visible { outline-color: #e8cd9b; }
+
+/* The single shell Bell owns Notices; Overview keeps its reserved Status lane. */
+.dashboard-feedback-slot { display: contents; }
+.dash-shell .overview-feedback-stack.dashboard-notices-stack { position: fixed; top: 84px; bottom: auto; z-index: 32; max-height: calc(100dvh - 164px); }
+.dashboard-notices-stack :focus-visible { outline-color: #e8cd9b; }
+
+@media (max-width: 1399px) {
+  .guild-location { display: none; }
+  .guild-operations-grid { grid-template-columns: minmax(0, 1fr); }
+  .guild-mission-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .guild-mission-list > .dash-empty { grid-column: 1 / -1; }
+  .guild-board-inbox { margin-top: 18px; }
+  .guild-workbench { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .guild-workbench > div { grid-column: 1 / -1; }
+}
+@media (max-width: 1023px) {
+  .dash-shell { grid-template-columns: minmax(0, 1fr); }
+  .dash-shell .dash-topbar { padding: max(8px, env(safe-area-inset-top)) 14px 8px; gap: 8px; }
+  .dash-shell .dash-brand { min-width: 140px; font-size: 20px; gap: 8px; }
+  .dash-shell .dash-brand small { font-size: 6px; }
+  .dash-shell .dash-brand-mark { width: 32px; height: 38px; }
+  .dash-brand-mark svg { width: 23px; height: 29px; }
+  .dash-shell .dash-search { width: auto; }
+  .dash-shell .dash-sidebar { display: none; }
+  .dash-shell .dash-mobile-nav .dash-nav-item { font-size: 11px; }
+  .dash-shell.has-overview-dock { grid-template-rows: 70px minmax(0, 1fr) 58px auto; }
+  .has-overview-dock > .dash-mobile-nav { grid-row: 4; }
+  .overview-dock-slot { grid-column: 1; padding: 5px 12px; }
+  .overview-feedback-stack { right: 12px; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 240px - env(safe-area-inset-bottom)); }
+  .dash-shell .overview-feedback-stack.dashboard-notices-stack { top: max(78px, calc(8px + env(safe-area-inset-top) + 62px)); max-height: calc(100dvh - 172px - env(safe-area-inset-bottom)); }
+  .has-overview-dock .overview-feedback-stack.dashboard-notices-stack { max-height: calc(100dvh - 230px - env(safe-area-inset-bottom)); }
+  .dash-shell .dash-mobile-nav .dash-nav-item.is-active { border-color: var(--section-line); box-shadow: inset 0 2px var(--nav-accent); }
+}
+@media (max-width: 639px) {
+  .dash-shell.has-overview-dock { grid-template-rows: 114px minmax(0, 1fr) 58px auto; }
+  .dash-shell .dash-topbar { gap: 4px; padding-left: 9px; padding-right: 9px; }
+  .dash-shell .dash-brand { min-width: 118px; font-size: 18px; }
+  .dash-shell .dash-brand small { font-size: 5px; }
+  .dash-shell .dash-search { width: 100%; min-height: 38px; }
+  .dash-shell .dash-search input { font-size: 12px; }
+  .dash-shell .dash-connection { margin: 0 4px; }
+  .dash-shell .dash-mobile-menu { top: 114px; }
+  .dash-shell .dash-tabs > button { padding: 9px 12px; }
+  .command-bridge { padding: 20px 12px 24px; }
+  .guild-bridge-intro { gap: 10px; align-items: flex-start; margin-bottom: 20px; }
+  .guild-bridge-title { gap: 10px; }
+  .guild-page-seal { width: 40px; height: 49px; }
+  .guild-page-seal svg { width: 22px; }
+  .guild-bridge-title .dash-eyebrow { font-size: 7px; letter-spacing: .06em; }
+  .guild-bridge-title h1 { font-size: 24px; }
+  .guild-bridge-title h1 > span { font-size: 12px; }
+  .guild-bridge-actions { display: none; }
+  .command-bridge .overview-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .command-bridge .overview-summary .dash-metric { min-height: 124px; padding: 13px 12px; gap: 7px; }
+  .command-bridge .overview-summary .guild-metric-label { font-size: 11px; gap: 6px; }
+  .guild-metric-label svg { width: 15px; }
+  .command-bridge .overview-summary .guild-metric-detail { font-size: 10px; }
+  .command-bridge .overview-summary .guild-metric-detail > svg { display: none; }
+  .command-bridge .overview-summary .dash-metric strong { font-size: 28px; }
+  .command-bridge .overview-summary-caption { font-size: 10px; line-height: 1.8; margin-bottom: 18px; }
+  .command-bridge .bridge-realm-heading { padding: 10px; gap: 7px; }
+  .command-bridge .bridge-realm-heading small { font-size: 10px; }
+  .command-bridge .bridge-realm-heading .dash-button { font-size: 11px; padding: 7px; }
+  .guild-realm-footer { flex-direction: column; gap: 4px; font-size: 9px; padding: 9px 10px; }
+  .guild-mission-list, .guild-workbench { grid-template-columns: minmax(0, 1fr); }
+  .guild-workbench { gap: 10px; margin: 20px 0; }
+  .guild-workbench > div { margin-bottom: 7px; }
+  .guild-workbench button { min-height: 74px; }
+  .guild-field-guide { padding: 12px; }
+  .guild-field-guide summary { flex-wrap: wrap; }
+  .guild-field-guide summary > span { display: none; }
+  .guild-field-guide .dash-guide { flex-direction: column; }
+  .command-bridge .bridge-world-host { height: 470px; }
+  .overview-feedback-stack { max-height: calc(100dvh - 274px - env(safe-area-inset-bottom)); }
+  .dash-shell .overview-feedback-stack.dashboard-notices-stack { top: 122px; max-height: calc(100dvh - 216px - env(safe-area-inset-bottom)); }
+  .has-overview-dock .overview-feedback-stack.dashboard-notices-stack { max-height: calc(100dvh - 274px - env(safe-area-inset-bottom)); }
+  .overview-dock > button { padding: 6px 9px; gap: 5px; }
+  .overview-dock-connection { padding: 0 8px; }
+  .overview-dock-panel > header { padding-left: 12px; }
+}

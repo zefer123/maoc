@@ -1,0 +1,547 @@
+{
+  "source": "https://github.com/mattpocock/skills",
+  "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+  "installedDateLocal": "2026-11-14",
+  "scope": "project",
+  "sourceGroups": [
+    "engineering",
+    "productivity"
+  ],
+  "method": "complete leaf-directory copies; no dependency install or script execution",
+  "automatic": "Model-invoked skills on matching tasks; user-invoked-only skills require explicit user request. Project rules enforce this where host metadata is unsupported.",
+  "setup": "Files installed; issue tracker / domain-doc setup not run, requires user choices.",
+  "skills": [
+    {
+      "name": "ask-matt",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "code-review",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "codebase-design",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "diagnosing-bugs",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "domain-modeling",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "grill-with-docs",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "implement",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "implement-spec",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "pr",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "prototype",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "research",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "retro",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "tdd",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "to-spec",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "to-tickets",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "triage",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "wayfinder",
+      "group": "engineering",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "wizard",
+      "group": "engineering",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "grill-me",
+      "group": "productivity",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "grilling",
+      "group": "productivity",
+      "userInvokedOnly": false
+    },
+    {
+      "name": "handoff",
+      "group": "productivity",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "teach",
+      "group": "productivity",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "to-questionnaire",
+      "group": "productivity",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "wait-what",
+      "group": "productivity",
+      "userInvokedOnly": true
+    },
+    {
+      "name": "writing-for-agents",
+      "group": "productivity",
+      "userInvokedOnly": false
+    }
+  ],
+  "files": [
+    {
+      "path": ".cline\\skills\\ask-matt\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\ask-matt\\agents\\openai.yaml",
+      "hash": "d30cfa5b0e84e2ca10b8d263b9dfcc13c3aa089ae6bc26096bc549fc037d274e"
+    },
+    {
+      "path": ".cline\\skills\\ask-matt\\PHASE-BOUNDARIES.md",
+      "sourcePath": "skills\\engineering\\ask-matt\\PHASE-BOUNDARIES.md",
+      "hash": "4e2a891beb182df8c2eb2a7dfbff20ba43ae008d29c77ac41b005181018f7ccd"
+    },
+    {
+      "path": ".cline\\skills\\ask-matt\\SKILL.md",
+      "sourcePath": "skills\\engineering\\ask-matt\\SKILL.md",
+      "hash": "9153a87908838ed24838c16da0eaeec46877f3ab701efdeefea7a5579a4a474d"
+    },
+    {
+      "path": ".cline\\skills\\code-review\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\code-review\\agents\\openai.yaml",
+      "hash": "3f72329747a916ac8ab2b4004490c79e1be6774a8a83e5b258d6ddc7e866abfe"
+    },
+    {
+      "path": ".cline\\skills\\code-review\\SKILL.md",
+      "sourcePath": "skills\\engineering\\code-review\\SKILL.md",
+      "hash": "36847f010579f3bccd54c49793e1fd043f10cc49b4607bac5a3067522e528b91"
+    },
+    {
+      "path": ".cline\\skills\\codebase-design\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\codebase-design\\agents\\openai.yaml",
+      "hash": "967df5c80a2a00e8fea9ce0e7914fb57114c93d16baa3b7743347a4dfeed61fc"
+    },
+    {
+      "path": ".cline\\skills\\codebase-design\\DEEPENING.md",
+      "sourcePath": "skills\\engineering\\codebase-design\\DEEPENING.md",
+      "hash": "a67260cb384580b60430486edeb47a6e656ea5f8a42b7196b24461459031f00c"
+    },
+    {
+      "path": ".cline\\skills\\codebase-design\\DESIGN-IT-TWICE.md",
+      "sourcePath": "skills\\engineering\\codebase-design\\DESIGN-IT-TWICE.md",
+      "hash": "43e788220bde5ce60c5f8932b6bde7a758ed63e22ddc0d658dbf6460d8950a6c"
+    },
+    {
+      "path": ".cline\\skills\\codebase-design\\SKILL.md",
+      "sourcePath": "skills\\engineering\\codebase-design\\SKILL.md",
+      "hash": "362b0bec828219d9f4b08ca7c466164e67253bdd817359258e60d2e9c5692a8f"
+    },
+    {
+      "path": ".cline\\skills\\diagnosing-bugs\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\diagnosing-bugs\\agents\\openai.yaml",
+      "hash": "167ab1659754b8c53706ecca7502ccc7fb219ff14f0c36bfb1db05ae31a8ac58"
+    },
+    {
+      "path": ".cline\\skills\\diagnosing-bugs\\scripts\\hitl-loop.template.sh",
+      "sourcePath": "skills\\engineering\\diagnosing-bugs\\scripts\\hitl-loop.template.sh",
+      "hash": "063ef14e7212113c7778258172e7c76e963926963e448934048f505d6e576e8f"
+    },
+    {
+      "path": ".cline\\skills\\diagnosing-bugs\\SKILL.md",
+      "sourcePath": "skills\\engineering\\diagnosing-bugs\\SKILL.md",
+      "hash": "aa87b0ac245c6d1b203c4678eb34dc101af02291448780c55c5e58ccc1619bd7"
+    },
+    {
+      "path": ".cline\\skills\\domain-modeling\\ADR-FORMAT.md",
+      "sourcePath": "skills\\engineering\\domain-modeling\\ADR-FORMAT.md",
+      "hash": "b7021c31a1c2485b07356a8110fd1fd1ae4facbab3e210983789f425f867d95b"
+    },
+    {
+      "path": ".cline\\skills\\domain-modeling\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\domain-modeling\\agents\\openai.yaml",
+      "hash": "ce496c77c77a090877bff10f198c9770fb52e23088351350ea0826380f948ff8"
+    },
+    {
+      "path": ".cline\\skills\\domain-modeling\\GLOSSARY-FORMAT.md",
+      "sourcePath": "skills\\engineering\\domain-modeling\\GLOSSARY-FORMAT.md",
+      "hash": "61fa9f6f9231070461dd4f7d4cfad377c33013c1e5668e1e6c0a8e4500944b3b"
+    },
+    {
+      "path": ".cline\\skills\\domain-modeling\\SKILL.md",
+      "sourcePath": "skills\\engineering\\domain-modeling\\SKILL.md",
+      "hash": "b62d997256cc073e123d4303da8e9db00db0e28de9739660ca3e55ab76e09cdb"
+    },
+    {
+      "path": ".cline\\skills\\grill-with-docs\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\grill-with-docs\\agents\\openai.yaml",
+      "hash": "81e6af95559517a292767439da8f46a468b4d88a6773a3316d511a428eb16ff3"
+    },
+    {
+      "path": ".cline\\skills\\grill-with-docs\\SKILL.md",
+      "sourcePath": "skills\\engineering\\grill-with-docs\\SKILL.md",
+      "hash": "abc0fa7948db18b5fb0e1cc1c522ac5ff47d874e2da1e5df60619d79be11f38b"
+    },
+    {
+      "path": ".cline\\skills\\implement\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\implement\\agents\\openai.yaml",
+      "hash": "8494f83602c58f8ab33d047d0516cdb90b8c29e6d564de0cef810daaca378bcb"
+    },
+    {
+      "path": ".cline\\skills\\implement\\SKILL.md",
+      "sourcePath": "skills\\engineering\\implement\\SKILL.md",
+      "hash": "83042ad79e3d7ce616124bf59a38a5ebe79417adb36bedfc4e6223aab783be8c"
+    },
+    {
+      "path": ".cline\\skills\\implement-spec\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\implement-spec\\agents\\openai.yaml",
+      "hash": "143db4aaaee1dfee7db6da5dab41501fb3852be498fb719dd52f1e21f29a383f"
+    },
+    {
+      "path": ".cline\\skills\\implement-spec\\SKILL.md",
+      "sourcePath": "skills\\engineering\\implement-spec\\SKILL.md",
+      "hash": "cdf23fc6e55aff30d5dd1e032da421eb4f2275739f0c9acd35b46b76eb514507"
+    },
+    {
+      "path": ".cline\\skills\\improve-codebase-architecture\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\improve-codebase-architecture\\agents\\openai.yaml",
+      "hash": "6b69701fc3f4f31ec626c1ae5c090dc5c640fab147a63be81b575c2f9c5231fa"
+    },
+    {
+      "path": ".cline\\skills\\improve-codebase-architecture\\HTML-REPORT.md",
+      "sourcePath": "skills\\engineering\\improve-codebase-architecture\\HTML-REPORT.md",
+      "hash": "870acb4262373ae536af7d1f4a9b56d33e7e7faa632bd425c09edb4f897fb828"
+    },
+    {
+      "path": ".cline\\skills\\improve-codebase-architecture\\SKILL.md",
+      "sourcePath": "skills\\engineering\\improve-codebase-architecture\\SKILL.md",
+      "hash": "ab526ca26246137fe96048b072d93aeff45f763da5e6c0eca5e51012dfd34433"
+    },
+    {
+      "path": ".cline\\skills\\pr\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\pr\\agents\\openai.yaml",
+      "hash": "33b71355c3ec06963d9a276baff9e9bf89a1ac69a5b9489a368c95021a8d6cc4"
+    },
+    {
+      "path": ".cline\\skills\\pr\\CREDITS.md",
+      "sourcePath": "skills\\engineering\\pr\\CREDITS.md",
+      "hash": "f5b7f7ead794f672324eb6a2cdc6986840e452abf15d72938084b645074bd149"
+    },
+    {
+      "path": ".cline\\skills\\pr\\SKILL.md",
+      "sourcePath": "skills\\engineering\\pr\\SKILL.md",
+      "hash": "57658baca2e50e9cf98fdb6b74a51f2afd34b71019d516f7c5d45a51a28354b0"
+    },
+    {
+      "path": ".cline\\skills\\prototype\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\prototype\\agents\\openai.yaml",
+      "hash": "cc1ce1ceaba1442c431dc76abb84b271ad72ecb94dcefee53130df742dc11787"
+    },
+    {
+      "path": ".cline\\skills\\prototype\\LOGIC.md",
+      "sourcePath": "skills\\engineering\\prototype\\LOGIC.md",
+      "hash": "8d7e31de7ce73b8e62f207e3f3ecbd90a7a54fdc728f8965f5f0739976f9959a"
+    },
+    {
+      "path": ".cline\\skills\\prototype\\SKILL.md",
+      "sourcePath": "skills\\engineering\\prototype\\SKILL.md",
+      "hash": "f74ae01f4fc454d3a4ef21271920f1706e626271e715dda0559e489f45c792c3"
+    },
+    {
+      "path": ".cline\\skills\\prototype\\UI.md",
+      "sourcePath": "skills\\engineering\\prototype\\UI.md",
+      "hash": "5ea83263ba72174c9055d58045f053d6577c0db6802c1e15bd1468dd16f78a0b"
+    },
+    {
+      "path": ".cline\\skills\\research\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\research\\agents\\openai.yaml",
+      "hash": "73840328dfa6b689d81ee645d8aaf8570a0cc44d64a32b119ea6091d2828d412"
+    },
+    {
+      "path": ".cline\\skills\\research\\SKILL.md",
+      "sourcePath": "skills\\engineering\\research\\SKILL.md",
+      "hash": "4422d07f1375712f0ecfadc05e6210bad2880f1d36eab32f62760eed344f935a"
+    },
+    {
+      "path": ".cline\\skills\\retro\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\retro\\agents\\openai.yaml",
+      "hash": "61afaa61443da49b3ff8fcc9d04735362bfec03e213791226134a3a21a9c6fd3"
+    },
+    {
+      "path": ".cline\\skills\\retro\\SKILL.md",
+      "sourcePath": "skills\\engineering\\retro\\SKILL.md",
+      "hash": "42110f533f169026d037cf141b9f6c2752c6d914903be4758c38a68349e83e78"
+    },
+    {
+      "path": ".cline\\skills\\setup-matt-pocock-skills\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\setup-matt-pocock-skills\\agents\\openai.yaml",
+      "hash": "53d0bf3786862a1cb5013ca78f12013b166d0819823dae0d3f9eb13eee2acdf2"
+    },
+    {
+      "path": ".cline\\skills\\setup-matt-pocock-skills\\domain.md",
+      "sourcePath": "skills\\engineering\\setup-matt-pocock-skills\\domain.md",
+      "hash": "20ee347cfcb4bd2266a8b747c11ca6c3dec85ff4cc38319de88cc3cadc12c80b"
+    },
+    {
+      "path": ".cline\\skills\\setup-matt-pocock-skills\\issue-tracker-github.md",
+      "sourcePath": "skills\\engineering\\setup-matt-pocock-skills\\issue-tracker-github.md",
+      "hash": "f5d521ed1b95921613f5d2c10a98e64e91a752060a963964f0d943834e48fbb0"
+    },
+    {
+      "path": ".cline\\skills\\setup-matt-pocock-skills\\issue-tracker-gitlab.md",
+      "sourcePath": "skills\\engineering\\setup-matt-pocock-skills\\issue-tracker-gitlab.md",
+      "hash": "7dbf98d4fa091dd56b00fdb2f453f241f9f077934bf96486a2951b0a2e04c463"
+    },
+    {
+      "path": ".cline\\skills\\setup-matt-pocock-skills\\issue-tracker-local.md",
+      "sourcePath": "skills\\engineering\\setup-matt-pocock-skills\\issue-tracker-local.md",
+      "hash": "a604b658f0730eae3107671b09323ed8382bd546e82dc3bedc265bccbeb35021"
+    },
+    {
+      "path": ".cline\\skills\\setup-matt-pocock-skills\\SKILL.md",
+      "sourcePath": "skills\\engineering\\setup-matt-pocock-skills\\SKILL.md",
+      "hash": "a5dd3406178c0e4cde95e3926ae07c6c6abd121587a674a12dc3b06cb5ed49dc"
+    },
+    {
+      "path": ".cline\\skills\\setup-matt-pocock-skills\\triage-labels.md",
+      "sourcePath": "skills\\engineering\\setup-matt-pocock-skills\\triage-labels.md",
+      "hash": "713abcdd778059289bc4ed8278d14787f719707d429da716ae814e69a727843c"
+    },
+    {
+      "path": ".cline\\skills\\tdd\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\tdd\\agents\\openai.yaml",
+      "hash": "f8e2afc1fbcd6a6e1178c30f290ca9f2286c949a0b74b8b68fd14f198b78ebac"
+    },
+    {
+      "path": ".cline\\skills\\tdd\\mocking.md",
+      "sourcePath": "skills\\engineering\\tdd\\mocking.md",
+      "hash": "73a10b6a26b56197c738a764c1e4205af98c74553f4a713795997f6bc35b917d"
+    },
+    {
+      "path": ".cline\\skills\\tdd\\SKILL.md",
+      "sourcePath": "skills\\engineering\\tdd\\SKILL.md",
+      "hash": "969583080caf842ae86a53501a0091eced13fd89cad65d3aa75c09112318ff33"
+    },
+    {
+      "path": ".cline\\skills\\tdd\\tests.md",
+      "sourcePath": "skills\\engineering\\tdd\\tests.md",
+      "hash": "0b401f98bd3684d2fea6440d6946afcf8f5f68ac6a65599dd7a2b90dd9f02eb5"
+    },
+    {
+      "path": ".cline\\skills\\to-spec\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\to-spec\\agents\\openai.yaml",
+      "hash": "55037139831219743dda1f716fe69eab3366e922529f69cc988fea3b1d34c74a"
+    },
+    {
+      "path": ".cline\\skills\\to-spec\\SKILL.md",
+      "sourcePath": "skills\\engineering\\to-spec\\SKILL.md",
+      "hash": "c73a2250beac0479e384f5466e834bb54ce6e30b7f8705e9999ba840d9d59b36"
+    },
+    {
+      "path": ".cline\\skills\\to-tickets\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\to-tickets\\agents\\openai.yaml",
+      "hash": "e396b8caaf6cdd95c94cf707a7ca2fa5c3a04b37ae5d4301b5b360a7ff7a34cb"
+    },
+    {
+      "path": ".cline\\skills\\to-tickets\\SKILL.md",
+      "sourcePath": "skills\\engineering\\to-tickets\\SKILL.md",
+      "hash": "b8eb6dca1085e85220b0f5990ed787ebf8a924844d090689f1073b06367e2f7a"
+    },
+    {
+      "path": ".cline\\skills\\triage\\AGENT-BRIEF.md",
+      "sourcePath": "skills\\engineering\\triage\\AGENT-BRIEF.md",
+      "hash": "9160800ad5483816f5bcd7f5aa62cfb6dbb16e6343d0754b9bb739815145fa15"
+    },
+    {
+      "path": ".cline\\skills\\triage\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\triage\\agents\\openai.yaml",
+      "hash": "d930356b9f23b89361f5b8f4fef87c911b35531b15a9005956c944a1058973ae"
+    },
+    {
+      "path": ".cline\\skills\\triage\\OUT-OF-SCOPE.md",
+      "sourcePath": "skills\\engineering\\triage\\OUT-OF-SCOPE.md",
+      "hash": "a48a2c63f0520eaa08cd68705030a77428e7ba6647834c7a644ad9cda396e4ae"
+    },
+    {
+      "path": ".cline\\skills\\triage\\SKILL.md",
+      "sourcePath": "skills\\engineering\\triage\\SKILL.md",
+      "hash": "797f4371a4cea1b564ecfdc7a603089acf3c023454e47ccb0b3307c62de279f8"
+    },
+    {
+      "path": ".cline\\skills\\wayfinder\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\wayfinder\\agents\\openai.yaml",
+      "hash": "3e698cdff8e84d0e900d8dec535060e9e6d16d923b313eefd881e958d164e37a"
+    },
+    {
+      "path": ".cline\\skills\\wayfinder\\SKILL.md",
+      "sourcePath": "skills\\engineering\\wayfinder\\SKILL.md",
+      "hash": "da3b9ce26c5128c8bd5b0099f262132320e72341544146196d81987edc62b58a"
+    },
+    {
+      "path": ".cline\\skills\\wizard\\agents\\openai.yaml",
+      "sourcePath": "skills\\engineering\\wizard\\agents\\openai.yaml",
+      "hash": "b9a0f4a716a64ada207aa4b38ce53981729cde053d87a39f2d51ad2dd30d3249"
+    },
+    {
+      "path": ".cline\\skills\\wizard\\SKILL.md",
+      "sourcePath": "skills\\engineering\\wizard\\SKILL.md",
+      "hash": "dbefb750eae07d9f8b05ab1084f6acfdda2752df2a6b577c46a505e2bc790164"
+    },
+    {
+      "path": ".cline\\skills\\wizard\\template.sh",
+      "sourcePath": "skills\\engineering\\wizard\\template.sh",
+      "hash": "b1f2291a7d01062aee8359cb987f6dd9da7a9627b0055faa1cff540a7e770dd2"
+    },
+    {
+      "path": ".cline\\skills\\grill-me\\agents\\openai.yaml",
+      "sourcePath": "skills\\productivity\\grill-me\\agents\\openai.yaml",
+      "hash": "c03a1eee1161bb70ca360b3d17705638b93bc8eec41319732725dc05a53196a5"
+    },
+    {
+      "path": ".cline\\skills\\grill-me\\SKILL.md",
+      "sourcePath": "skills\\productivity\\grill-me\\SKILL.md",
+      "hash": "19e660207b447acf6ee0d600471c02e549c7aca8fb3ab38fdc2c7056aa442fc8"
+    },
+    {
+      "path": ".cline\\skills\\grilling\\agents\\openai.yaml",
+      "sourcePath": "skills\\productivity\\grilling\\agents\\openai.yaml",
+      "hash": "ad75163922ff8263acdd25ebc37420e8fcf1fccb93483fd5742e9bd26f5c45f6"
+    },
+    {
+      "path": ".cline\\skills\\grilling\\SKILL.md",
+      "sourcePath": "skills\\productivity\\grilling\\SKILL.md",
+      "hash": "ec91c3f684a0a6323eaf30faa26d3aac5b95f28811eca6d4f108138934063c5c"
+    },
+    {
+      "path": ".cline\\skills\\handoff\\agents\\openai.yaml",
+      "sourcePath": "skills\\productivity\\handoff\\agents\\openai.yaml",
+      "hash": "deb645c801764579994bd23d1954aa991ef1d0d55bf30043d47ada631fcff5f4"
+    },
+    {
+      "path": ".cline\\skills\\handoff\\SKILL.md",
+      "sourcePath": "skills\\productivity\\handoff\\SKILL.md",
+      "hash": "739d8fbe3e6ed688581eb62b35f04834822eae47e57bc35a79c8d8dc9ac703d3"
+    },
+    {
+      "path": ".cline\\skills\\teach\\agents\\openai.yaml",
+      "sourcePath": "skills\\productivity\\teach\\agents\\openai.yaml",
+      "hash": "80e96a4d492ad8538e609672361e8543b69e7b22ce83be0efc2e5532472ede69"
+    },
+    {
+      "path": ".cline\\skills\\teach\\GLOSSARY-FORMAT.md",
+      "sourcePath": "skills\\productivity\\teach\\GLOSSARY-FORMAT.md",
+      "hash": "22f851b265a3bec5a333937cc7ff1250136c9b6512787ae2eb51a2a14e35c341"
+    },
+    {
+      "path": ".cline\\skills\\teach\\LEARNING-RECORD-FORMAT.md",
+      "sourcePath": "skills\\productivity\\teach\\LEARNING-RECORD-FORMAT.md",
+      "hash": "d49c754ea416a075534d0ba1428a0beba1327ae527c2d1af0333908d08e25d05"
+    },
+    {
+      "path": ".cline\\skills\\teach\\MISSION-FORMAT.md",
+      "sourcePath": "skills\\productivity\\teach\\MISSION-FORMAT.md",
+      "hash": "44ea82d5f57a626086bde99c70cd229cdef67998e8502c1cbcd50504f57f989a"
+    },
+    {
+      "path": ".cline\\skills\\teach\\RESOURCES-FORMAT.md",
+      "sourcePath": "skills\\productivity\\teach\\RESOURCES-FORMAT.md",
+      "hash": "377e70f83d41fdc2623037410600194655a2f7df41000925c24cc437da074ab5"
+    },
+    {
+      "path": ".cline\\skills\\teach\\SKILL.md",
+      "sourcePath": "skills\\productivity\\teach\\SKILL.md",
+      "hash": "d9480a846c88bb1151947eb484bab1a8c9a84af4d9ddf1ea0f6fb7fe639cf9b3"
+    },
+    {
+      "path": ".cline\\skills\\to-questionnaire\\agents\\openai.yaml",
+      "sourcePath": "skills\\productivity\\to-questionnaire\\agents\\openai.yaml",
+      "hash": "0b5ed84d805809777a15371c946a70f98321e3c6400fce5fcd74df71d40e860b"
+    },
+    {
+      "path": ".cline\\skills\\to-questionnaire\\SKILL.md",
+      "sourcePath": "skills\\productivity\\to-questionnaire\\SKILL.md",
+      "hash": "77825120815c21400f82e2794faf342d1d1a4ab1493be3fe061857885d26b768"
+    },
+    {
+      "path": ".cline\\skills\\wait-what\\agents\\openai.yaml",
+      "sourcePath": "skills\\productivity\\wait-what\\agents\\openai.yaml",
+      "hash": "e0d9beddf0093b3cf05de2722699affab5d240e5950469e208d59c1f0ed91bef"
+    },
+    {
+      "path": ".cline\\skills\\wait-what\\SKILL.md",
+      "sourcePath": "skills\\productivity\\wait-what\\SKILL.md",
+      "hash": "95393f96e730b20dabc6b425515cb6292d34bd9a91859a03c2c821e24d321112"
+    },
+    {
+      "path": ".cline\\skills\\writing-for-agents\\agents\\openai.yaml",
+      "sourcePath": "skills\\productivity\\writing-for-agents\\agents\\openai.yaml",
+      "hash": "486c388ed1babac6ea25001147b41d3ff6c8892b0128ae1b0bef8feea6363428"
+    },
+    {
+      "path": ".cline\\skills\\writing-for-agents\\SKILL-MECHANICS.md",
+      "sourcePath": "skills\\productivity\\writing-for-agents\\SKILL-MECHANICS.md",
+      "hash": "86f112c08d785cc224c13dcda75c0724b74bd62622cc61d4b7ab3dbbaf37f6fc"
+    },
+    {
+      "path": ".cline\\skills\\writing-for-agents\\SKILL.md",
+      "sourcePath": "skills\\productivity\\writing-for-agents\\SKILL.md",
+      "hash": "1c0c4ebf2d221917591144f0ced4fe46dae13301cb3d6d93fc88ecf0dda6aed2"
+    }
+  ]
+}

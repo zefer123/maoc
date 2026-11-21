@@ -1,0 +1,941 @@
+# Multi-Agent Software Engineering System
+## Master Blueprint & Roadmap
+
+**เอกสารรวมจากบทสนทนาและภาพอ้างอิงที่ผู้ใช้ส่ง**  
+**วันที่จัดทำ:** 14 พฤศจิกายน 2026  
+**เป้าหมายหลัก:** Fullstack Software Engineering  
+**Database:** Supabase  
+**Agent Runtime:** Multi-runtime  
+**แพลตฟอร์มหลัก:** Claude Code, OpenAI Codex, OpenCode
+
+> สถานะข้อมูลในเอกสาร
+> - **ยืนยันจากผู้ใช้:** เป้าหมาย Fullstack, ใช้ Supabase, ต้องการ Multi-Agent และใช้ Claude Code / Codex / OpenCode
+> - **รายการจากภาพ:** รายชื่อ Skills/Tools 50 รายการใน 5 หมวด และ Top 10 OpenCode Skill Repositories
+> - **ข้อเสนอแนะ:** MCP, Agent roles, workflow, quality gates และลำดับติดตั้ง เป็น blueprint สำหรับนำไปปรับใช้ ไม่ใช่สิ่งที่ติดตั้งหรือเชื่อมต่อแล้ว
+> - **ต้องตรวจสอบก่อนใช้งานจริง:** รูปแบบ config, ชื่อแพ็กเกจ, endpoint, auth และตำแหน่งติดตั้ง Skills/MCP เปลี่ยนได้ตามเวอร์ชันของแต่ละแพลตฟอร์ม
+
+---
+
+# สารบัญ
+
+1. เป้าหมายและขอบเขต
+2. รายการ 50 Skills/Tools จากภาพอ้างอิง
+3. Top 10 OpenCode Skill Repositories
+4. Matt Pocock และ TypeScript Engineering
+5. Skills ที่แนะนำให้เพิ่ม
+6. การตัดความซ้ำซ้อน
+7. Skills Mapping ตามบทบาท Agent
+8. MCP Architecture
+9. Multi-Agent Architecture
+10. Shared Project Instructions: AGENTS.md
+11. Task Contract
+12. Orchestrator Workflow
+13. Git Branch / Worktree Strategy
+14. Project Folder Structure
+15. MCP Configuration Templates
+16. Platform Setup
+17. Quality Gates และ Security
+18. Installation Roadmap
+19. Implementation Checklist
+20. Glossary และหลักการตัดสินใจ
+
+---
+
+# 1. เป้าหมายและขอบเขต
+
+ออกแบบระบบ AI Software Engineering ที่ใช้ Agent หลายตัวร่วมกันในโปรเจกต์ Fullstack โดยมี Supabase เป็นฐานข้อมูล และสามารถทำงานผ่าน Runtime ได้มากกว่าหนึ่งแพลตฟอร์ม
+
+## 1.1 เป้าหมาย
+
+- วิเคราะห์ Requirement และแตกงานเป็น Task ที่ตรวจสอบได้
+- ออกแบบ Architecture ก่อนลงมือเขียนโค้ด
+- แยกงาน Frontend, Backend, Database, Testing และ Security
+- ให้ Agent ใช้ Skills และ MCP ตามหน้าที่
+- ลดการแก้ไฟล์ชนกันระหว่าง Agent
+- ตรวจสอบด้วย Type Check, Lint, Tests และ Code Review
+- ใช้ Human Approval กับการกระทำที่มีผลกระทบสูง เช่น Production Migration และ Deployment
+
+## 1.2 Runtime ที่กำหนด
+
+| Runtime | บทบาท |
+|---|---|
+| Claude Code | Coding / Specialist Agents / Skills / MCP |
+| OpenAI Codex | Coding / Review / Task execution |
+| OpenCode | Alternative coding runtime / Agent execution |
+
+**หลักการ:** ไม่จำเป็นต้องให้ทั้งสาม Runtime ทำงานพร้อมกันทุกงาน ให้เลือก Runtime ตามความสามารถและ workflow ที่เหมาะสม และใช้ Repository, Task Contract และกฎโครงการร่วมกัน
+
+## 1.3 หลักการเริ่มต้น
+
+เริ่มจาก **Hierarchical Orchestration**: มี Orchestrator หนึ่งตัวจัดการ Task และมอบหมายให้ Specialist Agents ก่อน ยังไม่จำเป็นต้องเริ่มด้วย distributed agent network หรือ A2A protocol ตั้งแต่วันแรก
+
+---
+
+# 2. รายการ 50 Skills/Tools จากภาพอ้างอิง
+
+รายการต่อไปนี้ถอดจากภาพชุด 5 หมวดที่ผู้ใช้ส่ง เป็นรายการอ้างอิงจากภาพ ไม่ได้หมายความว่าทุกตัวเป็น Agent Skill ในรูปแบบมาตรฐานเดียวกัน บางตัวเป็นแอป บริการ CLI, MCP, library หรือ platform
+
+## 2.1 BUILD — สร้างและพัฒนา
+
+1. **Superpowers** — workflow/แนวปฏิบัติช่วยให้ Agent ทำงานพัฒนาซอฟต์แวร์เป็นขั้นตอน
+2. **gstack** — ชุด workflow/เครื่องมือสำหรับงานพัฒนาซอฟต์แวร์
+3. **Graphify** — วิเคราะห์ความสัมพันธ์และโครงสร้าง codebase
+4. **GitHub CLI** — จัดการ repository, pull request และ release ผ่าน terminal
+5. **Vercel** — Deploy เว็บและจัดการ preview
+6. **Playwright** — Browser automation และ end-to-end testing
+7. **Codex** — Coding agent/runtime
+8. **Claude HUD** — แสดงสถานะ/ข้อมูลการทำงานของ Claude Code
+9. **Context7** — ค้นเอกสารไลบรารีและ framework ตามเวอร์ชัน
+10. **Sentry** — Error monitoring และ observability
+
+## 2.2 DESIGN — ออกแบบและประสบการณ์ผู้ใช้
+
+11. **Figma** — UI design และ collaboration
+12. **UI UX Pro Max** — แนวทาง/ทักษะช่วยออกแบบ UI/UX
+13. **Impeccable** — แนวทางปรับคุณภาพและรายละเอียด UI
+14. **taste-skill** — แนวทางด้าน visual taste และ design decisions
+15. **emil-design-eng** — Design engineering และ interaction details
+16. **HyperFrames** — สร้าง motion/video จาก HTML
+17. **Remotion** — สร้างวิดีโอด้วย React
+18. **FFmpeg** — ประมวลผล/แปลงไฟล์เสียงและวิดีโอ
+19. **Higgsfield** — เครื่องมือสร้างวิดีโอ/ภาพเคลื่อนไหว
+20. **axe-core** — ตรวจ accessibility ของเว็บ
+
+## 2.3 GROW — ค้นคว้า การตลาด และลูกค้า
+
+21. **Perplexity** — ค้นคว้าข้อมูลพร้อมแหล่งอ้างอิง
+22. **Claude in Chrome** — Browser assistance/automation
+23. **Firecrawl** — ดึงข้อมูลเว็บไซต์และแปลงเป็นข้อมูลที่นำไปใช้ต่อได้
+24. **Apify** — Web scraping และ automation platform
+25. **last30days** — ค้น/สรุปประเด็นจากช่วง 30 วันที่ผ่านมา ตาม workflow ของเครื่องมือ
+26. **Google Gemini** — AI assistant/model platform
+27. **humanizer** — ปรับข้อความให้เป็นธรรมชาติ
+28. **Metricool** — จัดการและวิเคราะห์ social media
+29. **Apollo** — B2B prospecting และข้อมูลลูกค้า
+30. **Windsor.ai** — Marketing data integration/analytics
+
+## 2.4 MAKE — ผลิตคอนเทนต์และข้อมูล
+
+31. **GPT Image** — สร้าง/แก้ไขภาพ
+32. **Nano Banana** — เครื่องมือสร้าง/แก้ไขภาพ
+33. **ElevenLabs** — สร้างเสียงและ voice tools
+34. **Puppeteer** — Browser automation
+35. **Google Drive** — จัดเก็บและทำงานร่วมกันบนไฟล์
+36. **Granola** — จดบันทึก/สรุปการประชุม
+37. **Whisper** — Speech-to-text
+38. **Python** — ภาษาและ ecosystem สำหรับ automation/data
+39. **Canva** — ออกแบบกราฟิกและสื่อ
+40. **Gamma** — สร้าง presentation/document แบบ visual
+
+## 2.5 RUN — บริหารและทำงานอัตโนมัติ
+
+41. **Notion** — Knowledge base, planning และ SOP
+42. **Gmail** — Email
+43. **Google Calendar** — Calendar/scheduling
+44. **Slack** — Team communication
+45. **Zapier** — Workflow automation
+46. **Caveman** — ชุดแนวทาง/skill สำหรับลด token หรือทำงานให้กระชับ ตามรายการในภาพ
+47. **find-skills** — ช่วยค้นหา Skills ที่เหมาะกับงาน
+48. **Node.js** — JavaScript runtime
+49. **Ollama** — รันโมเดล AI ในเครื่อง
+50. **n8n** — Workflow automation
+
+---
+
+# 3. Top 10 OpenCode Skill Repositories
+
+รายการจากภาพแรก “Top 10 OpenCode Skill Repos — Ranked by GitHub stars” ณ เวลาที่ภาพถูกบันทึก ตัวเลขดาวเป็นค่าที่ปรากฏในภาพและไม่ควรถือเป็นจำนวนปัจจุบัน
+
+| ลำดับในภาพ | Repository / Project | หมายเหตุการใช้งาน |
+|---:|---|---|
+| 1 | **obra/superpowers** | Engineering workflow และ disciplined problem solving |
+| 2 | **DietrichGebert/ponytail** | Skill repository ตามภาพ; ตรวจสอบขอบเขตจริงก่อนติดตั้ง |
+| 3 | **nextlevelbuilder/ui-ux-pro-max-skill** | UI/UX design guidance |
+| 4 | **Graphify-Labs/graphify** | Codebase graph / relationship analysis |
+| 5 | **JuliusBrussee/caveman** | Concise/token-efficient interaction style |
+| 6 | **addyosmani/agent-skills** | Engineering / web performance / agent guidance |
+| 7 | **Egonex-AI/Understand-Anything** | ทำความเข้าใจ codebase และองค์ประกอบ |
+| 8 | **ComposioHQ/awesome-claude-skills** | รายการรวม Skills/ตัวอย่างสำหรับ Claude |
+| 9 | **tt-ali/archify** | Architecture/codebase understanding ตามรายการในภาพ |
+| 10 | **pbakaus/impeccable** | UI quality และ design refinement |
+
+## 3.1 แนวทางติดตั้ง
+
+- อย่าติดตั้งทุก repository โดยไม่ตรวจสอบ README, license, permissions, scripts และความเข้ากันได้
+- เริ่มจาก Superpowers, Graphify, UI UX Pro Max และ Skills ที่ตรงกับงานจริง
+- Awesome Claude Skills เป็น curated collection ไม่ใช่ Skill เดี่ยวที่จำเป็นต้องติดตั้งทั้งหมด
+- ตรวจสอบว่า Skill รองรับ Claude Code, Codex และ OpenCode หรือไม่; รูปแบบและตำแหน่งติดตั้งอาจต่างกัน
+- Pin version/commit ในงานที่ต้องการ reproducibility
+
+---
+
+# 4. Matt Pocock และ TypeScript Engineering
+
+ผู้ใช้ระบุว่าได้ติดตั้ง/นำ **Matt Pocock** มาใช้ร่วมกับ Top 10 แล้ว
+
+ให้จัดหมวดนี้เป็น TypeScript engineering knowledge และ coding practices โดยเน้น:
+
+- TypeScript type system และ type safety
+- การออกแบบ API และ function signatures
+- Generics, narrowing และ discriminated unions
+- การจัดการ `unknown` และ runtime validation
+- การออกแบบ types ระหว่าง frontend/backend
+- การเขียนโค้ดที่อ่านง่ายและ maintainable
+
+**ข้อควรระวัง:** คำว่า “Matt Pocock” ในบทสนทนาไม่ได้ระบุ repository, package หรือ Skill slug ที่แน่นอน จึงไม่กำหนด URL หรือชื่อ package ขึ้นเอง ให้ใช้แหล่ง/Skill ที่ผู้ใช้ติดตั้งไว้แล้ว และตรวจสอบชื่อจริงใน environment
+
+---
+
+# 5. Skills ที่แนะนำให้เพิ่ม
+
+เลือกเพิ่มตามความจำเป็น ไม่ต้องติดตั้งทั้งหมดพร้อมกัน
+
+## 5.1 Core Engineering
+
+- Superpowers — ถ้ายังไม่ได้ติดตั้งหรือยังไม่ได้เปิดใช้ workflow
+- Matt Pocock / TypeScript guidance — ใช้กับ TypeScript projects
+- Addy Osmani Skills — web engineering, performance และ engineering practices
+- find-skills — ค้น Skills เพิ่มตามงาน
+- Graphify — codebase graph
+- Understand Anything — codebase comprehension
+- Archify — architecture understanding
+- Caveman — concise output/token efficiency
+
+## 5.2 Frontend / Design
+
+- UI UX Pro Max — UI/UX design system guidance
+- Impeccable — UI polish และ visual refinement
+- axe-core — accessibility testing
+- Playwright — E2E/browser testing
+
+## 5.3 Backend / Database
+
+- Supabase documentation / MCP — ใช้กับ schema, SQL, Auth, RLS และ Edge Functions
+- TypeScript validation patterns — ตรวจ input/output ที่ runtime
+- Migration review workflow — ตรวจ SQL migration ก่อน apply
+
+## 5.4 Testing / Reliability
+
+- Playwright
+- axe-core
+- Sentry
+- Unit/integration test tooling ที่เหมาะกับ framework ของโปรเจกต์
+
+---
+
+# 6. การตัดความซ้ำซ้อน
+
+อย่าตัดสินจากชื่อหรือหมวดเพียงอย่างเดียว ให้ตรวจขอบเขตจริงและทดลองกับงานตัวอย่าง
+
+| กลุ่ม | ตัวหลักที่แนะนำ | ตัวที่อาจซ้ำ/เป็นทางเลือก | แนวทาง |
+|---|---|---|---|
+| Browser automation | Playwright | Puppeteer, Claude in Chrome | เลือกตาม browser, runtime และ test requirement |
+| Workflow automation | n8n | Zapier | เลือกตัวเดียวเป็นแกนหลักก่อน |
+| UI design guidance | UI UX Pro Max | Impeccable, taste-skill, emil-design-eng | อาจใช้ร่วมกันได้ถ้าหน้าที่ไม่ซ้ำ |
+| Codebase understanding | Graphify | Understand Anything, Archify | ทดลองกับ repository เดียวกันแล้วเลือกตามผลลัพธ์ |
+| Web extraction | Firecrawl | Apify | Firecrawl สำหรับ crawling/content extraction; Apify สำหรับ actor ecosystem |
+| Video generation/editing | Remotion | HyperFrames, FFmpeg | ต่างหน้าที่กัน; FFmpeg เป็น processing layer |
+| Coding runtimes | Claude Code / Codex / OpenCode | — | ใช้หลาย runtime ได้ แต่กำหนด ownership และ workflow |
+| Documentation lookup | Context7 | Firecrawl / web research | Context7 สำหรับ library docs; Firecrawl สำหรับ website data |
+
+## 6.1 กฎการตัดสินใจ
+
+1. ให้แต่ละ tool มี owner/use case ชัดเจน
+2. ถ้าสองตัวทำงานเดียวกัน ให้ทดลองกับ task เดียวกัน
+3. วัดคุณภาพ, latency, cost, maintenance และ permission scope
+4. เก็บตัวสำรองไว้ได้ แต่ไม่ต้องเปิดทุกตัวในทุก session
+5. ถอนหรือปิด tool ที่ไม่มีการใช้งานจริง
+
+---
+
+# 7. Skills Mapping ตามบทบาท Agent
+
+| Agent | Skills/Tools ที่เกี่ยวข้อง | งานหลัก |
+|---|---|---|
+| Orchestrator | Superpowers, find-skills | แตกงาน, dispatch, ติดตามสถานะ |
+| Architect | Graphify, Understand Anything, Archify | วิเคราะห์ codebase และออกแบบระบบ |
+| Frontend/UI Agent | UI UX Pro Max, Impeccable, Figma guidance | UI, component, design consistency |
+| TypeScript Developer | Matt Pocock guidance, Addy Osmani Skills | TypeScript, implementation, performance |
+| Backend Developer | Superpowers, Context7 | API, business logic, integration |
+| Database Engineer | Supabase MCP/docs | Schema, SQL, RLS, migrations |
+| QA Engineer | Playwright, axe-core | E2E, regression, accessibility |
+| Security Agent | Security checklist, Supabase review | Auth, authorization, secrets, input validation |
+| Reviewer | Superpowers, Graphify | Diff review, maintainability, regressions |
+| DevOps Agent | GitHub CLI, Vercel, Sentry | CI/CD, deployment, monitoring |
+
+**หมายเหตุ:** Skills ให้ความรู้/ขั้นตอน; MCP ให้เครื่องมือเข้าถึงระบบภายนอก; Agent คือบทบาทและ prompt; Runtime คือสภาพแวดล้อมที่เรียก Agent ทั้งสี่อย่างนี้ไม่ใช่สิ่งเดียวกัน
+
+---
+
+# 8. MCP Architecture
+
+## 8.1 MCP ที่แนะนำ
+
+### Core
+
+1. **Context7 MCP** — อ่านเอกสาร framework/library ตามเวอร์ชัน
+2. **GitHub MCP** — repository, issues, pull requests และ code collaboration
+3. **Playwright MCP** — browser interaction และ verification
+4. **Supabase MCP** — database, project resources, documentation และ debugging ตาม permission ที่เปิดให้
+
+### Optional
+
+5. **Sentry MCP** — error/issue investigation
+6. **Firecrawl MCP** — crawling และ extraction จากเว็บไซต์
+
+## 8.2 หลักการใช้ MCP
+
+- เริ่มด้วย read-only เมื่อรองรับ
+- จำกัด project และ resource scope
+- ใช้ OAuth หรือ secret manager ตามที่ provider รองรับ
+- ห้าม commit secrets หรือ API keys
+- อย่าเปิด production write access ให้ Agent ทั่วไป
+- แยก MCP server ที่ต้องใช้สิทธิ์สูงให้เฉพาะ Agent ที่จำเป็น
+- ตรวจสอบ tool descriptions และ permissions ก่อนอนุญาตให้ Agent เรียก
+- บันทึกการเปลี่ยนแปลงที่มีผลต่อระบบ
+
+## 8.3 MCP vs Skills vs Agents
+
+| ส่วนประกอบ | คำถามที่ตอบ |
+|---|---|
+| Skills | Agent ควรทำงานอย่างไร / ใช้แนวทางใด |
+| MCP | Agent เรียกใช้ข้อมูลหรือเครื่องมือภายนอกอะไรได้ |
+| Agent | ใครรับผิดชอบงานประเภทใด |
+| Runtime | Agent ทำงานอยู่ใน environment ใด |
+| Orchestrator | ใครแตกงาน จัดลำดับ และประสานงาน |
+
+---
+
+# 9. Multi-Agent Architecture
+
+## 9.1 ภาพรวม
+
+```text
+User Requirement
+      |
+      v
+Orchestrator
+      |
+      +--> Architect Agent
+      |
+      +--> Task Contracts
+              |
+              +--> Frontend Agent
+              +--> Backend Agent
+              +--> Database Agent
+              +--> QA Agent
+              +--> Security Agent
+              +--> Reviewer Agent
+              +--> DevOps Agent
+      |
+      v
+Integration & Validation
+      |
+      v
+Human Approval
+      |
+      v
+Merge / Deploy
+```
+
+## 9.2 บทบาทหลัก
+
+### Orchestrator
+- รับ requirement
+- ขอข้อมูลที่ขาด
+- แบ่งงานเป็น Task Contract
+- ระบุ dependency และ file ownership
+- มอบหมายงานและติดตามผล
+- รวมผลและส่งเข้า review
+
+### Architect Agent
+- อ่านโครงสร้างเดิม
+- ระบุ architectural constraints
+- สร้าง technical plan
+- ระบุ interfaces และ dependencies
+
+### Frontend Agent
+- ทำ UI components, pages, state และ client integration
+- ปฏิบัติตาม design system
+- ไม่แก้ schema หรือ secrets โดยไม่ได้รับมอบหมาย
+
+### Backend Agent
+- ทำ API, server logic และ integrations
+- ตรวจ authorization และ validation
+- เขียน tests
+
+### Database Engineer
+- วิเคราะห์ schema
+- เขียน migrations
+- ทบทวน indexes, constraints, RLS และ policies
+- ไม่ apply production migration โดยไม่มี approval
+
+### QA Agent
+- วาง test plan
+- รัน unit/integration/E2E tests
+- แนบหลักฐานและผลทดสอบ
+
+### Security Agent
+- ตรวจ authn/authz, RLS, secrets, input validation และ dependency risk
+- ระบุ severity และ remediation
+
+### Reviewer Agent
+- ตรวจ diff, architecture, readability, regression และ tests
+- ไม่อนุมัติงานโดยอาศัยคำกล่าวอ้างของผู้เขียนเพียงอย่างเดียว
+
+### DevOps Agent
+- ตรวจ CI/CD, environment, deployment readiness และ rollback
+- Production deploy ต้องมี human approval
+
+---
+
+# 10. Shared Project Instructions: AGENTS.md
+
+ใช้ `AGENTS.md` เป็นกฎกลางของโครงการ แต่ต้องสร้าง adapter สำหรับแต่ละ Runtime เพราะแต่ละแพลตฟอร์มอาจอ่านไฟล์ instructions และค้นหา Skills ต่างตำแหน่งกัน
+
+ไฟล์ตัวอย่างอยู่ที่ `templates/AGENTS.md`
+
+## หลักการ
+
+- กำหนด project identity และ stack
+- ระบุมาตรฐาน coding
+- กำหนดกฎ Supabase และ RLS
+- กำหนด security baseline
+- ระบุ testing requirements
+- ระบุ Git/branch/worktree rules
+- ระบุ agent communication และ quality gates
+- ห้าม deploy หรือแก้ production data โดยไม่มี approval
+
+---
+
+# 11. Task Contract
+
+Task Contract คือสัญญาการส่งงานระหว่าง Orchestrator กับ Specialist Agent
+
+ทุก Task ควรมี:
+
+- `task_id`
+- `title`
+- `assigned_agent`
+- `priority`
+- `objective`
+- `context`
+- `dependencies`
+- `allowed_files`
+- `restricted_files`
+- `deliverables`
+- `acceptance_criteria`
+- `required_evidence`
+- `status`
+
+ตัวอย่าง JSON อยู่ที่ `templates/task-contract.example.json`
+
+## 11.1 Task Lifecycle
+
+```text
+PENDING
+  -> ASSIGNED
+  -> IN_PROGRESS
+  -> REVIEW
+  -> TESTING
+  -> APPROVED
+  -> COMPLETED
+```
+
+ถ้าไม่ผ่าน:
+
+```text
+REVIEW / TESTING
+  -> REJECTED
+  -> REWORK
+  -> REVIEW
+```
+
+## 11.2 Acceptance Criteria
+
+Acceptance Criteria ต้องทดสอบได้ เช่น:
+- API ตอบ status code ที่กำหนด
+- input ไม่ถูกต้องถูกปฏิเสธ
+- user ที่ไม่มีสิทธิ์เข้าถึงข้อมูลไม่ได้
+- migration ใช้กับ local/staging ได้
+- tests ผ่าน
+- ไม่มี secret ใน diff
+
+หลีกเลี่ยงเงื่อนไขกว้าง ๆ เช่น “ทำให้ดี” หรือ “ใช้งานได้สมบูรณ์”
+
+---
+
+# 12. Orchestrator Workflow
+
+## 12.1 Feature Development
+
+```mermaid
+flowchart TD
+    A[User Requirement] --> B[Orchestrator]
+    B --> C[Requirement Analysis]
+    C --> D[Architect Agent]
+    D --> E[Task Contracts]
+    E --> F[Database Engineer]
+    E --> G[Backend / Frontend Agents]
+    E --> H[UI/UX Agent]
+    F --> I[Integration]
+    G --> I
+    H --> I
+    I --> J[QA Agent]
+    J --> K[Security Review]
+    K --> L[Code Reviewer]
+    L --> M{Approved?}
+    M -->|No| N[Rework]
+    N --> J
+    M -->|Yes| O[Pull Request]
+    O --> P[Human Approval]
+    P --> Q[Deploy]
+```
+
+## 12.2 Bug Fix
+
+```mermaid
+flowchart TD
+    A[Bug Report] --> B[Orchestrator]
+    B --> C[Logs / Reproduction]
+    C --> D[Root Cause Analysis]
+    D --> E[Developer Agent]
+    E --> F[Fix]
+    F --> G[QA Testing]
+    G --> H{Passed?}
+    H -->|No| E
+    H -->|Yes| I[Code Review]
+    I --> J[Human Approval]
+    J --> K[Merge]
+```
+
+## 12.3 Workflow Rules
+
+- งานที่มี dependency ต้องรอ prerequisite
+- งานที่แก้ไฟล์ร่วมกันต้อง serialize หรือแยก worktree
+- Agent ต้องส่งผลตาม Task Contract
+- Orchestrator ต้องตรวจหลักฐาน ไม่ใช่เชื่อข้อความ “เสร็จแล้ว”
+- การ merge และ deploy เป็นขั้นตอนที่แยกจากการเขียนโค้ด
+
+---
+
+# 13. Git Branch / Worktree Strategy
+
+ใช้ Git branch หรือ Git worktree เพื่อป้องกัน Agent แก้ไฟล์ทับกัน
+
+```text
+main
+ |
+ +-- feature/auth
+ |     +-- Auth / Backend Agent
+ |
+ +-- feature/database
+ |     +-- Database Agent
+ |
+ +-- feature/ui
+ |     +-- Frontend Agent
+ |
+ +-- feature/tests
+       +-- QA Agent
+```
+
+กฎ:
+- หนึ่ง Task/Agent ต่อ branch หรือ worktree ตามความเหมาะสม
+- ระบุ `allowed_files` และ `restricted_files`
+- ห้าม Agent หลายตัวเขียนไฟล์เดียวกันพร้อมกัน
+- ทุก branch ต้องผ่าน test และ review
+- merge ผ่าน Pull Request
+- หลีกเลี่ยง force push
+- ใช้ human approval สำหรับ migration และ production deploy
+
+---
+
+# 14. Project Folder Structure
+
+```text
+project/
+├── AGENTS.md
+├── CLAUDE.md
+├── opencode.json
+├── .mcp.json
+├── package.json
+├── .env.example
+│
+├── agents/
+│   ├── architect.md
+│   ├── frontend.md
+│   ├── backend.md
+│   ├── database.md
+│   ├── qa.md
+│   ├── security.md
+│   ├── reviewer.md
+│   └── devops.md
+│
+├── skills/
+│   └── project-specific/
+│
+├── contracts/
+│   ├── task.schema.json
+│   └── examples/
+│
+├── workflows/
+│   ├── feature-development.md
+│   └── bug-fix.md
+│
+├── docs/
+│   ├── architecture.md
+│   ├── security.md
+│   ├── database.md
+│   └── runbooks/
+│
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   ├── hooks/
+│   ├── utils/
+│   └── types/
+│
+├── supabase/
+│   ├── migrations/
+│   ├── functions/
+│   └── seed.sql
+│
+└── tests/
+    ├── unit/
+    ├── integration/
+    └── e2e/
+```
+
+> โครงสร้างนี้เป็นตัวอย่าง ไม่จำเป็นต้องสร้างทุกโฟลเดอร์ทันที และควรปรับตาม framework, monorepo structure และ convention ของ repository จริง
+
+---
+
+# 15. MCP Configuration Templates
+
+ตัวอย่างต่อไปนี้เป็น **starter templates** ไม่ใช่การรับประกันว่าใช้ได้กับทุกเวอร์ชัน ต้องตรวจสอบ schema ปัจจุบันจากเอกสารทางการของแต่ละ Runtime และ MCP server ก่อนนำไปใช้
+
+ไฟล์ตัวอย่างแยกอยู่ใน `platform-configs/`
+
+## 15.1 Claude Code
+
+ไฟล์ `.mcp.json` ตัวอย่างใช้ Context7 และ Playwright; Supabase ให้เพิ่มตาม transport/auth ที่เอกสาร Supabase MCP ระบุ ณ เวลาติดตั้ง
+
+```json
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}
+```
+
+## 15.2 Codex
+
+ไฟล์ config ของ Codex โดยทั่วไปเป็น TOML; ตรวจสอบตำแหน่ง config และ schema ตามรุ่นที่ติดตั้ง
+
+```toml
+[mcp_servers.context7]
+url = "https://mcp.context7.com/mcp"
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest"]
+```
+
+## 15.3 OpenCode
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": true
+    }
+  }
+}
+```
+
+## 15.4 Supabase MCP
+
+- ใช้ official Supabase MCP server
+- เริ่มจาก read-only และ scope เฉพาะ project
+- ห้ามเปิด service role key ให้ Agent
+- อย่าให้ Agent apply migration กับ production โดยอัตโนมัติ
+- ใช้ local/staging สำหรับทดสอบ schema changes
+- ใช้ migration files เป็น source of truth
+- ตรวจ RLS และ policies ก่อน release
+
+## 15.5 GitHub / Sentry / Firecrawl
+
+เพิ่มเป็นลำดับถัดไปตามงานที่ต้องทำจริง และใช้ official server/connector พร้อม OAuth หรือ secret management ที่รองรับ
+
+---
+
+# 16. Platform Setup
+
+## 16.1 Claude Code
+
+1. ติดตั้ง Claude Code และเปิด repository
+2. เพิ่ม `AGENTS.md` เป็นกฎกลาง
+3. สร้าง `CLAUDE.md` ให้ชี้ไปยังกฎกลาง เช่น `@AGENTS.md` หาก syntax รุ่นที่ใช้รองรับ
+4. เพิ่ม Agent definitions ตามโครงสร้าง `.claude/agents/` ที่เอกสารรุ่นปัจจุบันกำหนด
+5. ติดตั้ง Skills ในตำแหน่งที่ Claude Code รองรับ
+6. ตั้งค่า MCP ใน `.mcp.json` หรือ config scope ที่เหมาะสม
+7. ตรวจ MCP ด้วยคำสั่ง/หน้าจอที่รุ่นปัจจุบันรองรับ
+8. ทดสอบ Agent และสิทธิ์ด้วย task ที่ไม่มีความเสี่ยง
+
+## 16.2 OpenAI Codex
+
+1. ติดตั้ง Codex และเปิด repository
+2. เพิ่ม `AGENTS.md`
+3. ตรวจสอบการอ่าน instructions ด้วย task สั้น ๆ
+4. ติดตั้ง Skills ในตำแหน่งที่ Codex รองรับ เช่น project skill directory ตามเอกสารรุ่นปัจจุบัน
+5. ตั้งค่า MCP ใน `config.toml`
+6. ตรวจสอบ MCP ด้วยคำสั่ง CLI ที่รุ่นปัจจุบันรองรับ
+7. ทดสอบการเรียก tool และการปฏิบัติตาม Task Contract
+
+## 16.3 OpenCode
+
+1. ติดตั้ง OpenCode และเปิด repository
+2. เพิ่ม project instructions
+3. สร้าง Agent definitions ในตำแหน่งที่ OpenCode รองรับ
+4. ติดตั้ง Skills ตาม discovery convention ของรุ่นปัจจุบัน
+5. ตั้งค่า MCP ใน `opencode.json`
+6. ตรวจสถานะ MCP ด้วย CLI/UI ที่รุ่นปัจจุบันรองรับ
+7. ทดสอบการอ่าน instructions, Skills และ tool permissions
+
+## 16.4 Multi-runtime integration
+
+- เก็บ shared rules และ contracts ไว้ใน Repository
+- สร้าง adapter เฉพาะ runtime แทนการสมมติว่า config ใช้ร่วมกันได้ทั้งหมด
+- ให้ runtime หนึ่งเป็น owner ของ task ในช่วงเวลาหนึ่ง
+- ส่งงานข้าม runtime ผ่าน Task Contract และ Git branch/PR
+- หลีกเลี่ยงการให้หลาย runtime แก้ worktree เดียวกันพร้อมกัน
+
+---
+
+# 17. Quality Gates และ Security
+
+## 17.1 Quality Gates
+
+ก่อน merge:
+1. Type checking
+2. Linting / formatting
+3. Unit tests
+4. Integration tests
+5. E2E tests ที่เกี่ยวข้อง
+6. Security review
+7. Code review
+8. ตรวจ migration และ rollback plan หากมี database changes
+
+ก่อน production:
+1. Human approval
+2. ตรวจ environment variables
+3. ตรวจ migration plan
+4. ตรวจ backup/rollback readiness
+5. ตรวจ monitoring/alerts
+6. ยืนยัน deployment target
+
+## 17.2 Supabase Security Checklist
+
+- เปิดใช้ RLS สำหรับตารางที่เปิดผ่าน client/API ตามความเหมาะสม
+- ตรวจ SELECT/INSERT/UPDATE/DELETE policies
+- ห้ามเปิดเผย `service_role` key ใน frontend
+- ใช้ least privilege
+- ตรวจ ownership และ tenant isolation
+- validate input ทั้ง client และ server
+- ใช้ migrations ที่ review แล้ว
+- แยก local, staging และ production
+- ห้ามแก้ production data โดยไม่มี approval และ audit trail
+
+## 17.3 Secrets
+
+- ใช้ `.env.example` สำหรับชื่อ variable เท่านั้น
+- `.env` ต้องอยู่ใน `.gitignore`
+- ใช้ secret manager หรือ platform environment variables
+- ห้ามส่ง secret ใน Task Contract, prompt, log หรือ screenshot
+- หาก secret รั่ว ให้ rotate/revoke ทันที
+
+---
+
+# 18. Installation Roadmap
+
+## Phase 0 — Inventory
+
+- ตรวจ 10 repositories ที่ติดตั้งแล้ว
+- ตรวจ Matt Pocock skill/package ที่ใช้อยู่จริง
+- ตรวจเวอร์ชัน Runtime ทั้งสาม
+- ตรวจ framework และ repository structure
+- บันทึก license, source, version และ permissions ของแต่ละ Skill
+
+## Phase 1 — Foundation Skills
+
+เริ่มจาก:
+- Superpowers
+- Matt Pocock / TypeScript engineering guidance
+- Addy Osmani Skills
+- find-skills
+- Graphify
+
+จากนั้นประเมิน:
+- Understand Anything
+- Archify
+- Caveman
+- Ponytail
+- Awesome Claude Skills (ใช้เป็น catalog มากกว่าติดตั้งทุกอย่าง)
+
+## Phase 2 — Frontend / Testing
+
+- UI UX Pro Max
+- Impeccable
+- Playwright
+- axe-core
+
+## Phase 3 — MCP Core
+
+ติดตั้งทีละตัวและทดสอบ:
+1. Context7
+2. GitHub
+3. Playwright
+4. Supabase (read-only first)
+5. Sentry (optional)
+6. Firecrawl (optional)
+
+## Phase 4 — Shared Governance
+
+สร้าง:
+- `AGENTS.md`
+- Task Contract schema
+- Agent role definitions
+- Workflow documents
+- Security checklist
+- Quality gates
+
+## Phase 5 — Specialist Agents
+
+เริ่มจาก 4 บทบาทที่คุ้มค่าก่อน:
+1. Architect
+2. Developer
+3. Database Engineer
+4. QA / Reviewer
+
+เพิ่ม Security, UI/UX และ DevOps เมื่อ workflow เริ่มนิ่ง
+
+## Phase 6 — Multi-runtime
+
+- ทดสอบ Claude Code
+- ทดสอบ Codex
+- ทดสอบ OpenCode
+- ทำ runtime adapters
+- ทดสอบส่งงานผ่าน Task Contract
+- ใช้ branch/worktree แยกงาน
+
+## Phase 7 — Automation / Advanced
+
+เมื่อระบบพื้นฐานเสถียรแล้ว:
+- CI/CD integration
+- Automated task dispatch
+- Observability
+- Cost/latency tracking
+- A2A protocol หรือ distributed orchestration เมื่อมีเหตุผลชัดเจน
+
+**ไม่แนะนำให้เริ่มจาก A2A** หากยังไม่มีความจำเป็นด้าน cross-agent interoperability; hierarchical orchestration จะควบคุมและ debug ง่ายกว่าในช่วงแรก
+
+---
+
+# 19. Implementation Checklist
+
+## Foundation
+- [ ] ตรวจ 10 OpenCode Skill repositories
+- [ ] ยืนยัน Matt Pocock skill/package ที่ติดตั้งจริง
+- [ ] ตรวจ license และ permissions
+- [ ] เลือก Skills หลักและตัดรายการที่ไม่ใช้
+
+## MCP
+- [ ] Context7
+- [ ] GitHub
+- [ ] Playwright
+- [ ] Supabase read-only
+- [ ] Sentry (ถ้าจำเป็น)
+- [ ] Firecrawl (ถ้าจำเป็น)
+
+## Architecture
+- [ ] AGENTS.md
+- [ ] Runtime-specific instructions
+- [ ] Task Contract schema
+- [ ] Orchestrator workflow
+- [ ] Agent role definitions
+- [ ] File ownership rules
+- [ ] Git branch/worktree strategy
+
+## Validation
+- [ ] Type checking
+- [ ] Lint
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] E2E tests
+- [ ] Security review
+- [ ] Human approval
+- [ ] Deployment rollback plan
+
+---
+
+# 20. Glossary และหลักการตัดสินใจ
+
+| คำ | ความหมาย |
+|---|---|
+| Skill | ชุดคำแนะนำ/ความสามารถเฉพาะงานที่ Agent เรียกใช้ |
+| MCP | Model Context Protocol สำหรับเชื่อมต่อ tools/data sources |
+| Agent | ผู้รับผิดชอบงานเฉพาะบทบาท |
+| Runtime | สภาพแวดล้อมที่ Agent ทำงาน |
+| Orchestrator | ตัวประสานงานและจัดการ Task |
+| Task Contract | สัญญาข้อมูลสำหรับมอบหมายและส่งมอบงาน |
+| RLS | Row Level Security ใน PostgreSQL/Supabase |
+| Worktree | working directory แยกที่ผูกกับ Git repository |
+| Quality Gate | เงื่อนไขที่ต้องผ่านก่อน merge/release |
+| A2A | แนวทางสื่อสารระหว่าง Agent/ระบบ Agent |
+
+## หลักการสูงสุด
+
+1. เริ่มเล็กและวัดผลได้
+2. Skills ไม่ใช่ Agents และ MCP ไม่ใช่ Skills
+3. Shared rules ต้องมี runtime adapters
+4. หนึ่งงานต้องมี owner ชัดเจน
+5. ใช้ Task Contract เพื่อรักษา context
+6. ใช้ Git branch/worktree เพื่อแยกการแก้ไข
+7. ทุกผลลัพธ์ต้องมี evidence
+8. Production changes ต้องมี human approval
+9. ติดตั้งเฉพาะเครื่องมือที่มี use case
+10. เพิ่มความซับซ้อนเมื่อระบบพื้นฐานพิสูจน์แล้วว่าจำเป็น
+
+---
+
+## ภาคผนวก: แหล่งข้อมูลที่ควรตรวจสอบก่อนติดตั้ง
+
+ใช้เอกสารทางการของแพลตฟอร์มและโครงการแต่ละตัวเป็นแหล่งอ้างอิงหลัก:
+- Claude Code documentation
+- OpenAI Codex documentation
+- OpenCode documentation
+- Supabase MCP documentation
+- Model Context Protocol documentation
+- Context7 documentation
+- Playwright MCP documentation
+- GitHub MCP documentation
+- Sentry MCP documentation
+- Firecrawl documentation
+
+รายการนี้เป็นชื่อแหล่งอ้างอิง ไม่ใช่การยืนยันว่า config ในเอกสารนี้ผ่านการทดสอบกับเวอร์ชันล่าสุดแล้ว
