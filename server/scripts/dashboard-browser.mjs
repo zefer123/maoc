@@ -127,6 +127,13 @@ try {
   const key = async (key, code = key, virtual = 9) => { await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: virtual, ...(key === 'Enter' ? { text: '\r' } : {}) }); await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: virtual }); };
   const drain = async () => { for (let i = 0; i < 400 && app.orchestrator.running.size; i += 1) await delay(20); assert.equal(app.orchestrator.running.size, 0); };
   const tasks = () => [...app.orchestrator.tasks.values()];
+  const waitForDispatchedTask = async (previousCount, label) => {
+    // The Builder closes after sending on WS, before the backend commits admission.
+    for (let i = 0; i < 400 && tasks().length <= previousCount; i += 1) await delay(20);
+    const admitted = tasks();
+    assert.equal(admitted.length, previousCount + 1, `${label}: backend must admit exactly one new task`);
+    return admitted.at(-1);
+  };
   const api = async (path, data) => { const res = await fetch(`${target}/api${path}`, { method: data ? 'POST' : 'GET', ...(data ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : {}) }); assert.ok(res.ok, `${path}: ${res.status}`); return res.json(); };
   let acceptDialogs = true;
   socket.on('message', (raw) => { if (JSON.parse(raw).method === 'Page.javascriptDialogOpening') void cdp('Page.handleJavaScriptDialog', { accept: acceptDialogs }); });
@@ -637,9 +644,9 @@ try {
   assert.equal(await evaluate(`document.querySelector('[aria-label="Conditional routing review"]').textContent.includes('ELSE')`), true);
   await click('Dispatch workflow');
   await wait(`!document.querySelector('.dash-builder')`);
-  assert.equal(tasks().length, conditionalCount + 1, 'Conditional dispatch reached the backend before inspecting its task');
+  const conditionalTask = await waitForDispatchedTask(conditionalCount, 'Conditional dispatch');
   await drain();
-  const conditionalTask = tasks().at(-1); assert.equal(conditionalTask.state, 'COMPLETED');
+  assert.equal(conditionalTask.state, 'COMPLETED');
   assert.equal(conditionalTask.workflowNodes.find((node) => node.id === 'fallback').state, 'SKIPPED');
   await nav('Library'); await wait(`document.querySelectorAll('.dash-result-card').length>0`);
   await evaluate(`[...document.querySelectorAll('.dash-result-card')].find(e=>e.textContent.includes('Inspect the actual agent-registry')).click()`);
@@ -657,10 +664,10 @@ try {
   const elseTaskCount = tasks().length;
   await step('review'); await click('Dispatch workflow');
   await wait(`!document.querySelector('.dash-builder')`);
-  assert.equal(tasks().length, elseTaskCount + 1, 'ELSE dispatch reached the backend before inspecting the new task');
+  const elseTask = await waitForDispatchedTask(elseTaskCount, 'ELSE dispatch');
   await drain();
-  assert.equal(tasks().at(-1).state, 'COMPLETED'); assert.equal(tasks().at(-1).workflowNodes.find((node) => node.id === 'matched').state, 'SKIPPED');
-  assert.equal(tasks().at(-1).workflowNodes.find((node) => node.id === 'fallback').state, 'COMPLETED');
+  assert.equal(elseTask.state, 'COMPLETED'); assert.equal(elseTask.workflowNodes.find((node) => node.id === 'matched').state, 'SKIPPED');
+  assert.equal(elseTask.workflowNodes.find((node) => node.id === 'fallback').state, 'COMPLETED');
   checks.push('Editing typed condition values in browser selects ELSE without running IF; mission still produces final report');
   await nav('Library'); await click('กลับไปผลงาน');
 
