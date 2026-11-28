@@ -910,7 +910,12 @@ try {
   holdDeliverableRead = false;
   await cdp('Fetch.fulfillRequest', { requestId: deliverableRead, responseCode: 503, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: Buffer.from('{}').toString('base64') });
   await wait(`document.querySelector('[data-deliverable-detail] [role="alert"]') && !document.querySelector('[data-deliverable-detail] .dash-empty')`);
-  await evaluate(`(async()=>{const {persistence}=await import('/src/lib/persistenceClient.js'); await persistence.sync();})()`);
+  await evaluate(`(async () => {
+    const { persistence } = await import('/src/lib/persistenceClient.js');
+    // The alert can render before the failed read's full sync has finished.
+    await persistence.sync();
+    if (persistence.inspect().deliverables.status === 'offline') await persistence.sync();
+  })()`);
   await wait(`location.hash===${JSON.stringify(missingArtifactHash)} && document.querySelector('[data-deliverable-detail] .dash-empty') && !document.querySelector('[data-deliverable-detail] article')`);
   assert.deepEqual(app.storage.get('deliverables'), beforeB3Read);
   checks.push('B3 cold missing-artifact link shows loading → read failure → confirmed absence after recovery, with no redirect or archive write');
