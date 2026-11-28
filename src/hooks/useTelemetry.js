@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createTelemetryClient } from '../lib/telemetryClient.js';
 import { loadEngineConfig, syncEngineConfig } from '../lib/llmConnector.js';
 import { persistence } from '../lib/persistenceClient.js';
@@ -29,13 +29,17 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('en-GB');
 }
 
-export default function useTelemetry() {
+export default function useTelemetry(onHudRefresh, onLiveEvent) {
   const [connectionState, setConnectionState] = useState('connecting');
+  const [storageDriver, setStorageDriver] = useState(null);
   const [events, setEvents] = useState([]);
   const [tasks, setTasks] = useState({});
   const [now, setNow] = useState(() => Date.now());
   const [client, setClient] = useState(null);
   const [humanInputs, setHumanInputs] = useState({});
+  const [approvals, setApprovals] = useState(null);
+  const liveEvent = useRef(onLiveEvent);
+  useEffect(() => { liveEvent.current = onLiveEvent; }, [onLiveEvent]);
 
   useEffect(() => {
     let connection = 0;
@@ -58,10 +62,14 @@ export default function useTelemetry() {
       onClose: () => { connection++; setConnectionState('offline'); },
       onCollectionReady: persistence.reconcile,
       onCollectionChanged: persistence.invalidate,
+      onHudPreferencesUpdated: onHudRefresh,
       onServerError: (message) => window.alert(`Backend: ${message.error || 'Request failed'}`),
       onSnapshot: (snapshot) => {
         setConnectionState('live');
+        setStorageDriver({ sqlite: 'SQLite', 'atomic-json': 'JSON' }[snapshot.storage_driver] || null);
         setHumanInputs(Object.fromEntries((snapshot.human_inputs || []).map((input) => [input.input_id, input])));
+        setApprovals(Array.isArray(snapshot.pending_approvals)
+          ? Object.fromEntries(snapshot.pending_approvals.map((review) => [review.approval_id, review])) : null);
         const nextTasks = {};
         for (const task of snapshot.tasks || []) {
           nextTasks[task.task_id] = {
@@ -77,10 +85,23 @@ export default function useTelemetry() {
         }
         setTasks(nextTasks);
         setEvents(snapshot.events || []);
+        onHudRefresh?.();
       },
       onEvent: (event) => {
         setHumanInputs((current) => reduceHumanInputs(current, event));
+        setApprovals((current) => {
+          if (!current) return current; // Older backends still use retained history.
+          if (event.event_type === 'HITL_INTERRUPT' && event.approval_id) return { ...current, [event.approval_id]: event };
+          if (event.approval_id && Object.hasOwn(current, event.approval_id)) {
+            const next = { ...current }; delete next[event.approval_id]; return next;
+          }
+          if (event.event_type === 'TASK_COMPLETED' && Object.values(current).some((review) => review.task_id === event.task_id)) {
+            return Object.fromEntries(Object.entries(current).filter(([, review]) => review.task_id !== event.task_id));
+          }
+          return current;
+        });
         setEvents((prev) => [...prev.filter((item) => item.event_id !== event.event_id).slice(-299), event]);
+        liveEvent.current?.(event);
         if (!event.task_id) return; // Scheduler status events are not mission state transitions.
         setTasks((prev) => {
           const current = prev[event.task_id] || {
@@ -114,7 +135,7 @@ export default function useTelemetry() {
 
     setClient(telemetry);
     return () => { connection++; telemetry.close(); };
-  }, []);
+  }, [onHudRefresh]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -195,8 +216,8 @@ export default function useTelemetry() {
   );
 
   const pendingHitl = useMemo(() => {
-    return pendingReviews(events, liveTasks);
-  }, [events, liveTasks]);
+    return approvals ? Object.values(approvals) : pendingReviews(events, liveTasks);
+  }, [approvals, events, liveTasks]);
   const spatial = useMemo(() => ({
     ...spatialActivity(liveTasks, events, Object.values(humanInputs), pendingHitl, connectionState === 'live'),
     links: connectionState === 'live' ? recentHandoffs(events, Math.max(now, Date.now())) : []
@@ -212,12 +233,14 @@ export default function useTelemetry() {
 
   return {
     connectionState,
+    storageDriver,
     spatial,
     events,
     streamLines,
     activity,
     liveTasks,
     pendingHitl,
+    approvalSnapshot: approvals !== null,
     pendingHumanInputs: Object.values(humanInputs),
     respondHuman,
     activeTask,

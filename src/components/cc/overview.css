@@ -1,5 +1,15 @@
 /* Shared dashboard navigation, Overview and department workspaces. No scene/engine changes. */
 
+.i47-shell :is(.i47-core-menu, .i47-hud-popup, .i47-web-status) {
+  background: var(--hud-header);
+  background: color-mix(in srgb, var(--hud-header) 88%, transparent);
+  border: 1px solid var(--hud-stage-frame);
+  border-color: color-mix(in srgb, var(--hud-accent) 38%, var(--guild-border));
+  border-radius: 10px;
+  box-shadow: 0 8px 24px #05081242;
+  backdrop-filter: blur(14px);
+}
+
 /* B2 measured analytics. Scoped presentation only; preserve shell and runtime contracts. */
 .performance-dashboard { min-width: 0; }
 .performance-dashboard .dash-caption { overflow-wrap: anywhere; }
@@ -301,10 +311,11 @@
 .has-overview-dock > .dash-sidebar { grid-row: 2 / 4; }
 .overview-dock-slot { grid-row: 3; grid-column: 2; position: relative; min-width: 0; display: flex; justify-content: flex-end; align-items: center; padding: 5px 24px; border-top: 1px solid #b7a08826; background: #100e1bea; z-index: 25; }
 .overview-dock { display: flex; align-items: center; max-width: 100%; border: 1px solid #b7a08866; border-radius: 6px; background: #292234; color: #d6cbdf; box-shadow: inset 0 1px #e3cda51a; }
-.overview-dock > button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 12px; font-size: 11px; border-left: 1px solid #b7a08835; }
+.overview-dock > button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 12px; font-size: 11px; }
 .overview-dock > button[aria-expanded="true"] { color: #f0d7a6; background: #ac8a5830; }
 .overview-dock > button:hover { background: #b5a0d014; }
-.overview-dock-connection { padding: 0 12px; }
+.overview-dock-counts { display: inline-flex; align-items: center; gap: 8px; padding-inline-start: 7px; border-inline-start: 1px solid #b7a08835; white-space: nowrap; }
+.overview-dock-counts strong { color: #e4c48c; font-family: var(--guild-mono); }
 .overview-backend { display: inline-flex; align-items: center; gap: 7px; color: #e4c48c; font-size: 10px; white-space: nowrap; }
 .overview-backend > i { width: 6px; height: 6px; background: #d4ac6d; border-radius: 50%; flex-shrink: 0; }
 .overview-backend.is-connected { color: #b0d0bf; }
@@ -413,6 +424,5 @@
   .dash-shell .overview-feedback-stack.dashboard-notices-stack { top: 122px; max-height: calc(100dvh - 216px - env(safe-area-inset-bottom)); }
   .has-overview-dock .overview-feedback-stack.dashboard-notices-stack { max-height: calc(100dvh - 274px - env(safe-area-inset-bottom)); }
   .overview-dock > button { padding: 6px 9px; gap: 5px; }
-  .overview-dock-connection { padding: 0 8px; }
   .overview-dock-panel > header { padding-left: 12px; }
 }

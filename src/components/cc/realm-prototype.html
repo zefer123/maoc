@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>The Realm World — Intelligent 47 Concept</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./realm-prototype.css">
+  <link rel="stylesheet" href="./realm-opening-prototype.css">
+  <link rel="stylesheet" href="./realm-navigation-prototype.css">
+  <script src="./realm-prototype.js" defer></script>
+  <script src="./realm-opening-prototype.js" defer></script>
+  <script src="./realm-navigation-prototype.js" defer></script>
+</head>
+<body data-mode="weather" data-theme="dark" data-forecast="cloud" data-effects="on">
+  <!-- Standalone throwaway concept. No app scripts, accounts, network calls or live data. -->
+  <header class="masthead frame">
+    <a class="wordmark" href="#/home/opening" aria-label="Intelligent 47 — Home" id="brand-home">
+      <svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M18 2 32 10v16l-14 8L4 26V10L18 2Z" stroke="currentColor"/><path d="m11 22 7-13 7 13-7-3-7 3Z" fill="currentColor"/><path d="M18 24v5" stroke="currentColor"/></svg>
+      <span>INTELLIGENT<span class="brand-number">47</span><small>WORKSPACE SYSTEMS</small></span>
+    </a>
+    <div class="header-actions"><span class="concept-tag">LOCAL CONCEPT</span><button class="theme-toggle" type="button" id="theme-toggle"><span aria-hidden="true">◐</span> <span id="theme-action">Light theme</span></button></div>
+  </header>
+  <main id="top" class="frame">
+    <nav class="core-bar" aria-label="Core workspaces" id="core-bar">
+      <button type="button" id="core-home" data-core="home" aria-controls="views-home" aria-current="true" aria-expanded="false"><small>CORE 01</small><span>Home</span></button>
+      <button type="button" id="core-dashboards" data-core="dashboards" aria-controls="views-dashboards" aria-expanded="false"><small>CORE 02</small><span>Dashboards</span></button>
+      <button type="button" id="core-agents" data-core="agents" aria-controls="views-agents" aria-expanded="false"><small>CORE 03</small><span>Agents</span></button>
+      <button type="button" id="core-armory" data-core="armory" aria-controls="views-armory" aria-expanded="false"><small>CORE 04</small><span>Armory</span></button>
+      <button type="button" id="core-copilot" data-core="copilot" aria-controls="views-copilot" aria-expanded="false"><small>CORE 05</small><span>Copilot 47</span></button>
+    </nav>
+    <section id="panel-home" data-workspace aria-labelledby="core-home">
+      <nav class="category-bar" id="views-home" aria-label="Home pages" hidden>
+        <a id="tab-opening" data-page="opening" href="#/home/opening" aria-current="page">Live Opening</a>
+        <a id="tab-realm" data-page="realm" href="#/home/realm">Realm World</a>
+      </nav>
+      <div id="page-opening" data-owned-page aria-labelledby="tab-opening">
+    <section class="stage" id="home-stage" aria-labelledby="realm-title">
+      <div class="signal-field" aria-hidden="true">
+        <svg viewBox="0 0 960 420" preserveAspectRatio="xMidYMid slice" fill="none" focusable="false">
+          <path class="signal-tracks" d="M42 300H130L191 239H235L269 205H350 M123 139H220L252 107H343 M395 90H502L543 131H622 M569 306H664L713 257H844L887 214H959 M699 108H757L808 159H910 M611 368H773L821 320H949"/>
+          <path class="signal-pulse" pathLength="100" d="M42 300H130L191 239H235L269 205H350"/>
+          <path class="signal-pulse signal-pulse-late" pathLength="100" d="M569 306H664L713 257H844L887 214H959"/>
+          <path class="signal-pulse signal-pulse-last" pathLength="100" d="M699 108H757L808 159H910"/>
+          <path class="signal-star" d="m715 51 54-34m53 59 37-24"/>
+          <circle cx="191" cy="239" r="2"/><circle cx="543" cy="131" r="2"/><circle cx="713" cy="257" r="2"/><circle cx="808" cy="159" r="2"/><circle cx="821" cy="320" r="2"/>
+        </svg>
+      </div>
+      <div class="stage-index"><span id="stage-channel">HOME / LIVE OPENING</span><span id="stage-source">WEATHER VISUALIZER <b> / </b> DEMO</span></div>
+      <div class="stage-copy">
+        <p class="eyebrow"><i></i> <span id="stage-eyebrow">ATMOSPHERIC BRIEF</span></p>
+        <h1 id="realm-title"><span id="stage-title-first">Home</span><br><em id="stage-title-second">Opening.</em></h1>
+        <div class="weather-summary" id="weather-summary" aria-live="polite"><strong id="weather-temp">27°C</strong><div><span id="weather-condition">Partly cloudy</span><small id="weather-meta">Sample forecast · Day 01</small></div></div>
+        <p class="intro" id="realm-intro" hidden>One workspace. Three ways to see it.</p>
+        <button class="primary" id="realm-cta" type="button" hidden>Choose a workspace <span aria-hidden="true">↘</span></button>
+      </div>
+      <div class="viewer" id="viewer" tabindex="0" role="group" aria-label="Interactive weather model" aria-describedby="camera-help">
+        <canvas id="scene" aria-hidden="true"></canvas>
+        <div class="view-corner corner-tl" aria-hidden="true"></div><div class="view-corner corner-br" aria-hidden="true"></div>
+        <div class="view-label" aria-hidden="true"><span id="scene-label">ATMOSPHERE</span><span id="scene-index">FIG. 00</span></div>
+      </div>
+      <div class="stage-footer">
+        <span id="camera-help">Drag to orbit <span class="keyboard-hint">· Arrow keys when focused</span></span>
+        <output id="angles" aria-hidden="true">YAW −22° / PITCH 32°</output>
+        <button type="button" id="reset-camera" class="reset"><span aria-hidden="true">↺</span> Reset view</button>
+      </div>
+    </section>
+    <section class="mode-section" id="forecast-strip" aria-labelledby="forecast-title">
+      <div class="mode-heading"><h2 id="forecast-title">Forecast outlook</h2><span>ILLUSTRATIVE DATA</span></div>
+      <div class="forecast-grid" id="forecast-days" role="group" aria-label="Forecast days"></div>
+    </section>
+      </div>
+      <div id="page-realm" data-owned-page aria-labelledby="tab-realm" hidden>
+    <section class="mode-section" id="modes" aria-labelledby="modes-title">
+      <div class="mode-heading"><h2 id="modes-title">Workspaces</h2><span>SELECT A VIEW <b> / </b> 03</span></div>
+      <div class="mode-grid" role="group" aria-label="Workspace views">
+        <button class="mode" type="button" data-view="deck" aria-pressed="false"><span class="mode-number">01</span><span class="mode-description"><strong>Command Deck</strong><small>Missions and operations</small></span><span class="mode-arrow" aria-hidden="true">↗</span></button>
+        <button class="mode" type="button" data-view="station" aria-pressed="false"><span class="mode-number">02</span><span class="mode-description"><strong>Realm World 2.5D</strong><small>Departments and guild atlas</small></span><span class="mode-arrow" aria-hidden="true">↗</span></button>
+        <button class="mode" type="button" data-view="visualizer" aria-pressed="true"><span class="mode-number">03</span><span class="mode-description"><strong>3D Visualizer <span class="preview">PREVIEW</span></strong><small>Orbit the Nexus Core</small></span><span class="mode-arrow" aria-hidden="true">↗</span></button>
+      </div>
+    </section>
+      </div>
+      <p id="mode-status" class="sr-only" aria-live="polite"></p>
+    </section>
+    <section id="panel-dashboards" data-workspace aria-labelledby="core-dashboards" hidden>
+      <nav class="category-bar" id="views-dashboards" aria-label="Dashboard pages" hidden>
+        <a id="tab-overview" data-page="overview" href="#/dashboards/overview">Overview</a><a id="tab-missions" data-page="missions" href="#/dashboards/missions">Missions</a>
+      </nav>
+      <section class="core-content" id="page-overview" data-owned-page aria-labelledby="tab-overview">
+        <p class="eyebrow">CORE 02 / OPERATIONS</p><h2>Operations overview</h2><p>Review what the workspace can and cannot measure in this concept. No mission telemetry has been loaded.</p>
+        <dl class="console-rows"><div><dt>Mission telemetry</dt><dd>Not linked</dd></div><div><dt>Metrics</dt><dd>Unavailable in preview</dd></div></dl>
+        <a class="primary" href="#/dashboards/missions">Open Missions <span aria-hidden="true">→</span></a>
+      </section>
+      <section class="core-content" id="page-missions" data-owned-page aria-labelledby="tab-missions" hidden>
+        <p class="eyebrow">CORE 02 / MISSION BOARD</p><h2>Missions</h2><p>Mission history is not available in the standalone preview. This is not an empty mission count.</p>
+        <a class="console-link" href="#/dashboards/overview">← Operations overview</a>
+      </section>
+    </section>
+    <section id="panel-agents" data-workspace aria-labelledby="core-agents" hidden>
+      <nav class="category-bar" id="views-agents" aria-label="Agent pages" hidden>
+        <a id="tab-directory" data-page="directory" href="#/agents/directory">Directory</a><a id="tab-activity" data-page="activity" href="#/agents/activity">Activity</a>
+      </nav>
+      <section class="core-content" id="page-directory" data-owned-page aria-labelledby="tab-directory">
+        <p class="eyebrow">CORE 03 / ROSTER</p><h2>Agent directory</h2><p>This preview does not load the workspace roster. Agent identity and availability are separate signals.</p>
+        <a class="primary" href="#/agents/activity">View activity status <span aria-hidden="true">→</span></a>
+      </section>
+      <section class="core-content" id="page-activity" data-owned-page aria-labelledby="tab-activity" hidden>
+        <p class="eyebrow">CORE 03 / ACTIVITY</p><h2>Agent activity</h2><p>Presence, work and handoffs require workspace telemetry. No agent is shown as idle or active without evidence.</p>
+        <a class="console-link" href="#/agents/directory">← Agent directory</a>
+      </section>
+    </section>
+    <section id="panel-armory" data-workspace aria-labelledby="core-armory" hidden>
+      <nav class="category-bar" id="views-armory" aria-label="Armory pages" hidden>
+        <a id="tab-settings" data-page="settings" href="#/armory/settings">System Settings</a><a id="tab-glossary" data-page="glossary" href="#/armory/glossary">Glossary</a>
+      </nav>
+      <section class="core-content" id="page-settings" data-owned-page aria-labelledby="tab-settings">
+        <p class="eyebrow">CORE 04 / PREFERENCES</p><h2>System Settings</h2><p>Changes apply to this preview only and reset when you reload.</p>
+        <div class="setting-row"><label for="theme-setting">Appearance <small>Applies across every Core.</small></label><select id="theme-setting"><option value="dark">Dark</option><option value="light">Light</option><option value="system">Follow device</option></select></div>
+        <div class="setting-row"><label for="units-setting">Temperature <small>Updates the opening and forecast cards.</small></label><select id="units-setting"><option value="c">Celsius (°C)</option><option value="f">Fahrenheit (°F)</option></select></div>
+        <div class="setting-row"><label for="effects-setting">Background motion <small>Device reduced-motion preference always wins.</small></label><select id="effects-setting"><option value="on">Animated</option><option value="off">Still</option></select></div>
+      </section>
+      <section class="core-content" id="page-glossary" data-owned-page aria-labelledby="tab-glossary" hidden>
+        <p class="eyebrow">CORE 04 / REFERENCE</p><h2>Glossary</h2>
+        <dl class="terms"><div><dt>Core</dt><dd>One of the five top-level workspaces.</dd></div><div><dt>Live Opening</dt><dd>The start page with device time, browser connection state, and the weather visualization.</dd></div><div><dt>Realm World</dt><dd>The view selector for Command Deck, 2.5D, and the Nexus preview.</dd></div><div><dt>Web Status</dt><dd>Browser-reported connectivity, not a backend health check.</dd></div></dl>
+      </section>
+    </section>
+    <section id="panel-copilot" data-workspace aria-labelledby="core-copilot" hidden>
+      <nav class="category-bar" id="views-copilot" aria-label="Copilot pages" hidden>
+        <a id="tab-briefing" data-page="briefing" href="#/copilot/briefing">Briefing</a><a id="tab-directives" data-page="directives" href="#/copilot/directives">Directive Guide</a>
+      </nav>
+      <section class="core-content" id="page-briefing" data-owned-page aria-labelledby="tab-briefing">
+        <p class="eyebrow">CORE 05 / OPERATOR</p><h2>Copilot 47</h2><p>Written directives are available in the main app. This preview does not submit missions or contact an AI provider.</p>
+        <a class="primary" href="#/copilot/directives">Read the directive guide <span aria-hidden="true">→</span></a>
+      </section>
+      <section class="core-content" id="page-directives" data-owned-page aria-labelledby="tab-directives" hidden>
+        <p class="eyebrow">CORE 05 / DIRECTIVE GUIDE</p><h2>Before you dispatch</h2>
+        <ol class="guide-steps"><li>Write the goal and choose the team.</li><li>Review the proposed execution and any human review requirement.</li><li>Confirm explicitly in the main app. Nothing here dispatches.</li></ol>
+        <a class="console-link" href="#/copilot/briefing">← Copilot briefing</a>
+      </section>
+    </section>
+  </main>
+  <footer class="web-status" aria-label="Web status"><div class="frame status-content"><button type="button" class="status-trigger" id="status-trigger" aria-haspopup="dialog"><span class="web-state" id="web-state" role="status">WEB / CHECKING</span><span aria-hidden="true">↗</span></button><span class="feed-state">WEATHER / DEMO</span><span class="backend-state">BACKEND / NOT LINKED</span><time id="status-clock" aria-label="Local device time">--:--:--</time></div></footer>
+  <dialog class="status-dialog" id="status-dialog" aria-labelledby="status-title">
+    <div class="dialog-heading"><div><p class="eyebrow">INTELLIGENT 47 / SESSION</p><h2 id="status-title">Connection details</h2></div><form method="dialog"><button type="submit" class="theme-toggle" autofocus>Close</button></form></div>
+    <dl class="console-rows"><div><dt>Browser connection</dt><dd id="status-dialog-network">Checking</dd></div><div><dt>Workspace backend</dt><dd>Not linked</dd></div><div><dt>Weather feed</dt><dd>Illustrative data only</dd></div></dl>
+    <p>Browser connectivity does not verify a server, weather provider, or AI provider.</p>
+  </dialog>
+</body>
+</html>

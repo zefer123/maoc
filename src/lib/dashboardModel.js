@@ -19,8 +19,9 @@ export const cleanMission = (text = '') => text.replace(/\[TEAM:[A-Z]+\]\s*/gi, 
 export function taskDepartment(task) {
   return task.description?.match(/\[TEAM:([a-z]+)\]/i)?.[1].toLowerCase() || null;
 }
-export function dashboardNotices(events) {
+export function dashboardNotices(events, includeActionRequests = false) {
   return events.filter((event) => event.event_type === 'TASK_COMPLETED' ||
+    (includeActionRequests && ['HUMAN_INPUT_REQUESTED', 'HITL_INTERRUPT'].includes(event.event_type)) ||
     (event.event_type === 'SCHEDULE_UPDATED' && ['FAILED', 'REJECTED', 'CANCELLED'].includes(event.schedule?.last?.status)))
     .slice(-60).reverse();
 }
@@ -38,12 +39,21 @@ export function overviewSnapshot({ tasks, actionCount, connectionState, notices,
 }
 export const isSavedDeliverable = (item) => Boolean(item && !/^(seed-|art-\d+$)/.test(String(item.id)));
 
+function archivedTaskId(item) {
+  const explicit = [item.taskId, item.task_id].filter((value) => typeof value === 'string' && value.length > 0);
+  if (explicit.length === 2 && explicit[0] !== explicit[1]) return null;
+  return explicit[0] ?? (typeof item.id === 'string' && item.id.startsWith('task-') ? item.id.slice(5) || null : null);
+}
+
 export function realDeliverables(data) {
   // Historical sample artifacts are kept in storage, but are never presented as live results.
   return Object.entries(data || {}).flatMap(([deptId, items]) => (Array.isArray(items) ? items : [])
       .filter(isSavedDeliverable)
-    .map((item) => ({ ...item, deptId, taskId: item.taskId || (String(item.id).startsWith('task-') ? item.id.slice(5) : null) }))).reverse();
+    .map((item) => ({ ...item, deptId, taskId: archivedTaskId(item) }))).reverse();
 }
+
+export const missionDeliverables = (items, taskId) => items.filter((item) => item.taskId === taskId);
+export const deliverableReadState = (status) => status === 'pending' ? 'loading' : ['conflict', 'invalid', 'offline'].includes(status) ? 'unavailable' : 'ready';
 export function pendingReviews(events, tasks) {
   const resolved = new Set(events.filter((event) => event.approval_id && event.event_type !== 'HITL_INTERRUPT').map((event) => event.approval_id));
   const terminal = new Set(tasks.filter((task) => !['RUNNING', 'AWAITING_HITL'].includes(task.state)).map((task) => task.taskId));

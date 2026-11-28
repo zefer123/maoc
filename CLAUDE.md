@@ -45,11 +45,11 @@ not certified across the full Node >=22 range. Default JSON remains independent.
 
 | Entry point | Responsibility / authority |
 | --- | --- |
-| src/components/CommandCenterView.jsx | Navigation, modal selection, in-memory drafts/read IDs and composition; six categories. Room/topology/analytics and first-open Builder use lazy boundaries; initial Overview map stays eager. |
-| src/hooks/useDashboardRoute.js + src/lib/dashboardRoute.js | Allowlisted hash routes for sections, tabs, exact mission/archive/team/room IDs; browser Back/Forward and reload. URLs contain identifiers only, never prompts, search, provider keys or drafts. Missing resources stay explicit; no replacement dispatch. |
+| src/components/CommandCenterView.jsx + src/components/cc/HomeOpening.jsx | Home Opening is the workspace landing: sample weather and forecast, compact Task/Log from canonical telemetry, and a scrollable index of existing destinations. The index animation obeys app pause and Reduce Motion. The Realm World remains an explicit mode selector. Canvas, map, rooms, topology, analytics and first-open Builder are lazy. |
+| src/components/cc/WorkspaceAtmosphere.jsx + src/components/cc/RealmScene.jsx + src/components/cc/WorkspaceStatus.jsx | One decorative, pointer-transparent shell background persists across page routes. Parallax Stars is the three-depth default; Cyber-Link, Meteor and Minimal remain selectable. Mouse parallax moves its layers only, never the Weather or Nexus canvases. Those canvases are samples/previews, not telemetry. Web Status separates browser connectivity, WebSocket status and local time; none verifies provider health. Atmosphere and pause are session-only. OS Reduce Motion or app pause stops automatic motion, not manual orbit. |
+| src/components/cc/DashboardNavigation.jsx + src/lib/dashboardPresentation.js | The fixed-width left rail shows only the route's category trigger when closed. At 760px and below, the same trigger is in a permanent top menu row and opens an anchored, bounded panel. Opening, switching or closing leaves content geometry unchanged. The five category names are unnumbered and only the selected category exposes nested destinations. Category selection and hover never navigate. ArrowDown reaches destinations, Escape returns focus to the trigger, and outside interaction or navigation closes the frame. Analytics belongs to Dashboards, Glossary to Armory. |
 | src/hooks/useTelemetry.js | Canonical live task/event/HUMAN/review state and reconnect snapshots; browser transport is not provider-health verification. |
-| src/components/cc/DashboardNavigation.jsx + src/lib/dashboardPresentation.js | Grouped English desktop/mobile shell with contextual subviews and route-aware location; existing route identifiers only. Search/More and one topbar Bell retained. Activity counts pending actions separately; registry 27/8 is membership, not online status. Legacy shell components remain unmounted. |
-| src/components/cc/OverviewDock.jsx | Controlled shared feedback disclosure; Status footer exists only on Overview, Notices preview works across all six sections. CommandCenterView owns panel/trigger and existing ephemeral read IDs. |
+| src/components/cc/OverviewDock.jsx | Command Deck alone reserves a compact Status control showing Running and Needs You when live, or connection state otherwise. The expanded panel retains backend and task details; Bell opens Notices without navigating. CommandCenterView owns panel selection and ephemeral read IDs. |
 | src/components/cc/DashboardPanels.jsx | Overview/Missions/Teams projections; Overview counts follow current search, pending actions use global runtime. Situation cards open exact RUNNING/COMPLETED/failure filters or action inbox; board prioritizes awaiting/running then recent retained work without mutating tasks. Realm/directory/analytics shortcuts select explicit existing views. |
 | src/components/cc/TeamWorkspace.jsx + src/lib/teamWorkspace.js | Department dossier distinct from map/room: actual registry members, related retained missions, departmental saved artifacts and bounded event signals. Relations use routing tags, workflow/swarm members or retained source/target events; neither lifetime completeness nor provider health. Static ONLINE/sample metrics are not evidence. |
 | src/components/cc/DashboardTaskDetail.jsx | Node/events/artifact links and AAR detail; absent retained runtime is explicit, never replaced by another mission. |
@@ -115,6 +115,7 @@ Existing `payload_summary` previews are unchanged; this is not event redaction.
 | Templates | src/lib/taskTemplates.js and server/src/taskTemplateStore.js; <=50 immutable presets, 16 parameters, 128 occurrences, 2000 characters/value. Literal single-pass {{name}} only in description/HUMAN question; no eval/path/expression/topology/settings/grants expansion. All own string values required, extras rejected; final 12000/2000 limits revalidated. Reject TEAM/COWORK marker injection; not semantic prompt-injection isolation. Load/render never executes, resets timing to Run now; explicit dispatch/save-paused-schedule required. Schedule holds independent expanded text. No version history/dynamic recurrence parameters/template-ID provenance. |
 | Conditional branching | Last actual named tool result of a direct AI dependency, not model prose; strict eq/neq and numeric gt/gte/lt/lte. One comparison/node, own-property path <=8 segments/200 characters, no prototype keys/coercion/eval. Missing/error/type mismatch fails closed, not ELSE. Unselected/dependency-blocked paths SKIPPED; queued mail cancelled. join all/any resolves after barriers, never races or swallows failures. Final sink must remain reachable. SAGE/LEX/CIPHER cannot be conditional or have conditional ancestors. Private bounded/redacted routing results clear on termination; persisted rules/decisions are not raw outputs. |
 | Review authority | SAGE/LEX/CIPHER report gates and sensitive-department HERMES fallback remain. HUMAN contribution is not report approval; report approval never grants external execution rights. |
+| Workspace attention | `SNAPSHOT.pending_approvals` projects actual in-memory gates independently of `human_inputs` and retained events. It is not persisted or replayed on restart. Home, Bell and ATTENTION open exact IDs in one modal without changing routes. Only live gates allow action through the existing endpoints; notice read/dismiss never resolves a gate. |
 
 ## Persistence & Recovery
 
@@ -146,6 +147,12 @@ Existing `payload_summary` previews are unchanged; this is not event redaction.
 - schedules.json, taskTemplates.json and performance.json are separate server-owned state,
   outside five browser collection writes/import/backup/reset. Schedules/templates preserve
   authored text verbatim and must not contain secrets. They grant no model scheduling tools.
+- `GET/PUT /api/hud-preferences` uses strict schema v1 and an expected revision (stale → `409`).
+  Theme, accent and tactical grid live in `.maoc/state/hud-preferences.json` on both drivers,
+  protected by the existing Access Gate and writer lock. Writes serialize and drain; corruption
+  fails startup. Authorized WS `HUD_PREFERENCES_UPDATED` carries only the committed revision,
+  independent of the five-collection Stage 3 switch. Browser cache is a display fallback, never
+  an automatic overwrite on reconnect. Operator name stays browser-local.
 - Runtime tasks are RAM-only (bounded 200), events ring bounded 500; reconnect snapshots
   hydrate pending state independently of ring history. No backend-restart recovery of active
   tasks, HUMAN inputs, approvals or mail; no durable complete failed-mission/run ledger.
@@ -192,6 +199,10 @@ PerformanceDashboard keeps the existing API/filter/polling contracts and exact m
 routes; responsive cards retain semantic table headers and keyboard Agent inspectors.
 Analytics/Reviews endpoint 404 is an integration failure, distinct from empty collections
 and a missing retained AAR. Existing detail/pagination/offline/degraded contracts remain.
+Mission Results and Library detail use exact hash links in both directions. The archive
+projection normalizes explicit task IDs (conflicting fields do not link) or falls back to
+the `task-<id>` archive convention. Keep matching archives visible even without runtime;
+use the existing deliverables sync state to distinguish loading, failure and absence.
 
 ## Cozy Guild / Overview A Locks
 
@@ -203,7 +214,7 @@ and a missing retained AAR. Existing detail/pagination/offline/degraded contract
   in src/data/cozyGuild.js. SVG/CSS scenes and pixel sprites, not a twelve-realm MMORPG,
   NPC simulation, imported engine or persistent world. Legacy room chat/artifact behavior is
   unchanged and decorative samples are not live market/agent integration evidence.
-- IsometricMap mounts in initial Overview and Teams; TradeFloorRoom and TopologyTreeView
+- IsometricMap mounts on demand in Command Deck, Realm World 2.5D and the legacy Teams map; TradeFloorRoom and TopologyTreeView
   remain reachable. GuildBackdrop/Ground/Props are fixed bounded decorative layers,
   aria-hidden and pointer-transparent. Causeways are not workflow edges. GuildBuilding
   has eight silhouettes; shared PixelAgent outfits and Gothic CozyRoomScene preserve IDs.
@@ -225,8 +236,8 @@ and a missing retained AAR. Existing detail/pagination/offline/degraded contract
   navigation data-section; active states retain category identity/markers/weight, never
   all Gold. Primary actions/insignia remain Gold; department palettes/statuses stay distinct.
   Team directory titles/dossier eyebrows retain team accent. No fake ranks/XP/trends.
-  OverviewDock keeps only Status in the reserved 58px shell footer above mobile nav.
-  One topbar Bell opens the non-modal Notices preview on all six sections, not Activity;
+  OverviewDock reserves Status only on Command Deck.
+  One topbar Bell opens the non-modal Notices preview across the workspace without moving to Activity;
   Bell badge is unread notices only, while Activity retains pending-action badges/controls.
   Latest five from the existing 60-item feed; shared ephemeral read IDs, no new persistence.
   Opening never reads/approves. Explicit read, mission/View All links only; no approval controls.
@@ -238,7 +249,7 @@ and a missing retained AAR. Existing detail/pagination/offline/degraded contract
 - Department dossiers use existing guild palettes/pixel identities with no new art dependency.
   Teams directory opens a team-specific dossier; room/mission/archive links preserve exact IDs.
   Rooms exit to their team's dossier. Existing map/topology/analytics remain explicit views.
-  Hash navigation keeps section context in memory; browser reload restores only the URL view,
+  Blank hash opens Home Opening; `#/home/realm` is the selector, and `#/overview` still opens Command Deck without rewriting the bookmark. Browser reload restores only the URL view,
   not drafts/runtime durability. Skip-to-content focuses main without replacing the hash route.
   Missing team/mission/artifact and malformed route states must never select a substitute.
 

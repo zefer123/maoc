@@ -1,4 +1,7 @@
+import { HOME_VIEWS } from './dashboardRoute.js';
+
 // Presentation-only destinations. Reuse the existing allowlisted routes; no dispatch.
+export const homeViewLabel = (id = 'opening') => HOME_VIEWS.find((view) => view.id === id)?.label;
 export const NAVIGATION_GROUPS = [
   { label: 'COMMAND', description: 'Your daily workspace', sections: ['overview', 'missions'] },
   { label: 'GUILD & KNOWLEDGE', description: 'People, results & signals', sections: ['teams', 'library', 'activity'] }
@@ -30,6 +33,7 @@ export function isNavigationView(route, destination) {
 }
 
 export function dashboardContext(route) {
+  if (route.section === 'home') return homeViewLabel(route.homeView) || 'Page not found';
   if (route.section === 'overview') return 'Command bridge';
   if (route.section === 'teams' && route.teamId) return route.teamTab === 'rooms' ? 'Department room' : 'Department dossier';
   if (route.section === 'teams' && route.teamTab === 'rooms') return 'Department rooms';

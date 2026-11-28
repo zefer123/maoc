@@ -180,6 +180,11 @@ export class Orchestrator {
     approval.status = decision === 'approve' ? 'APPROVED' : 'REJECTED';
     approval.resolve(decision); return true;
   }
+  listPendingApprovals() {
+    return [...this.approvals.values()]
+      .filter((approval) => approval.ready && approval.status === 'PENDING' && !approval.signal.aborted && approval.notice)
+      .map(({ notice }) => ({ ...notice }));
+  }
   listHumanInputs() {
     return [...this.humanInputs.values()].filter((input) => input.ready && input.status === 'PENDING' && !input.signal.aborted)
       .map((input) => structuredClone(input.public));
@@ -377,8 +382,10 @@ export class Orchestrator {
       if (this.history) await this.history.save(task.id, this.refreshWaitingState(task));
       task.signal.throwIfAborted();
       approval.ready = true;
-      this.emit(task, { event_type: 'HITL_INTERRUPT', source_agent: agent, target_agent: 'HUMAN', approval_id: id,
+      const notice = this.emit(task, { event_type: 'HITL_INTERRUPT', source_agent: agent, target_agent: 'HUMAN', approval_id: id,
         payload_summary: `Human review required. No external action will execute. ${task.outputs.filter((o) => o.agent === agent).at(-1)?.text.slice(0, 3500) || 'Review mission deliverables'}`, progress_pct: task.progress });
+      const { event_id, timestamp, approval_id, task_id, source_agent, payload_summary } = notice;
+      approval.notice = { event_id, timestamp, approval_id, task_id, source_agent, payload_summary };
       task.signal.throwIfAborted();
       const result = await decision;
       review.status = task.signal.aborted ? (task.signal.reason?.name === 'TimeoutError' ? 'TIMED_OUT' : 'CANCELLED') : result === 'approve' ? 'APPROVED' : 'REJECTED';

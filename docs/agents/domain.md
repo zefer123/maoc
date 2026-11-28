@@ -15,6 +15,13 @@ docs/U5-MARKET-ANALYSIS.md; the approved formulas stay there, not in the glossar
 
 ## Write only when a decision needs it
 
+- **Home Opening** is the root landing and monitoring page. Its scrollable workspace index links to Command Deck, 2.5D and the Nexus without dispatching work. **The Realm World** is a separate mode selector, not a theme. Keep `#/overview` as a Command Deck bookmark.
+- **ATTENTION** groups Blocked, Degraded, Report Approval and Waiting; an `INTERRUPTED` entry is history only. **CREW** shows the roster with observed activity, not modeled presence. Opening a notification or action never changes page, resolves a gate, or replays a toast on reconnect.
+- **Mission results** show only deliverables with the exact Task ID. A stored deliverable can outlast runtime and links back to that same mission when provenance is known. Sync failure is not proof a deliverable is missing.
+- **Core rail** shows only the current category by default (Home at root). The desktop rail stays 162px wide; at 760px and below the trigger is in a permanent top row with a bounded dropdown. Open, switch and close never shift the workspace. One scrollable frame shows five unnumbered names and only the selected category's nested destinations. Selecting a category does not navigate. Analytics belongs to Dashboards and Glossary to Armory. **Forecast** remains a five-day sample; Task/Log and Command Deck Status use canonical telemetry. **Web Status** separates browser connectivity, WebSocket and local time from provider health.
+- **Parallax Stars** (default), Cyber-Link, Meteor and Minimal are modes of one shared background behind all workspace pages, not a Home Opening stage or Visualizer canvas. Mouse parallax moves only this background. **Realm Intelligence 3D** remains at `#/home/visualizer`. System Reduce Motion and app pause stop automatic motion without disabling manual orbit.
+- **Workspace HUD preferences** are shared non-secret display settings backed by the Vault. `kali-cyber` defaults; `realm-cyber` and `realm-guild` are user choices. Operator name and microphone permission stay device-local; offline display edits never auto-upload.
+
 - Public demo means the standalone, read-only `demo/` with invented data and no API, browser storage, or app source in the deployed files. The authorized GitHub Pages source is the root of `gh-pages` in the public `zefer123/maoc` repository, not `main`. Do not publish the backend or Vault, purchase a plan, or change publishing destinations without approval.
 
 - GLOSSARY.md: create at the first resolved domain term that needs shared naming.

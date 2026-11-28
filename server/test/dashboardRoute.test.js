@@ -1,13 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseDashboardRoute, dashboardRouteHash } from '../../src/lib/dashboardRoute.js';
+import { parseDashboardRoute, dashboardRouteHash, workspaceCategory } from '../../src/lib/dashboardRoute.js';
 import { teamWorkspace } from '../../src/lib/teamWorkspace.js';
 
 test('dashboard routes round-trip distinct team, room, mission, archive and tab destinations', () => {
-  for (const hash of ['#/overview', '#/settings', '#/teams', '#/teams/tech', '#/teams/design/room', '#/teams?view=analytics', '#/teams?view=graph', '#/teams?view=realm', '#/teams?view=rooms', '#/missions', '#/missions/uuid?tab=review', '#/library/task-uuid', '#/library?view=notes', '#/activity?view=messages']) {
+  for (const hash of ['#/home', '#/home/deck', '#/home/station', '#/home/visualizer', '#/agents', '#/dashboards', '#/armory', '#/copilot-47', '#/overview', '#/settings', '#/teams', '#/teams/tech', '#/teams/design/room', '#/teams?view=analytics', '#/teams?view=graph', '#/teams?view=realm', '#/teams?view=rooms', '#/missions', '#/missions/uuid?tab=review', '#/library/task-uuid', '#/library?view=notes', '#/activity?view=messages']) {
     assert.equal(dashboardRouteHash(parseDashboardRoute(hash)), hash);
   }
-  assert.deepEqual(parseDashboardRoute(''), { section: 'overview' });
+  assert.deepEqual(parseDashboardRoute(''), { section: 'home', homeView: 'opening' });
+  assert.deepEqual(parseDashboardRoute('#/home/realm'), { section: 'home', homeView: 'realm' });
+  assert.equal(dashboardRouteHash({ section: 'home', homeView: 'realm' }), '#/home/realm');
+  assert.deepEqual(parseDashboardRoute('#/overview'), { section: 'overview' });
+  assert.equal(parseDashboardRoute('#/home/unknown').section, 'not-found');
   assert.equal(parseDashboardRoute('#/teams/missing').teamId, 'missing', 'Unknown resources keep their identifier for an honest missing page');
 });
 test('dashboard rejects malformed, unsafe and unsupported paths instead of opening another resource', () => {
@@ -16,6 +20,15 @@ test('dashboard rejects malformed, unsafe and unsupported paths instead of openi
 test('navigation serializes only identifiers, not drafts, search or provider secrets', () => {
   assert.equal(dashboardRouteHash({ section: 'missions', taskId: 'job 1', draft: 'private', apiKey: 'secret', search: 'confidential' }), '#/missions/job%201');
   assert.equal(parseDashboardRoute('#/missions/job%201').taskId, 'job 1');
+});
+test('Armory owns the Glossary; legacy Analytics remains under Dashboards', () => {
+  const glossary = parseDashboardRoute('#/settings/glossary');
+  assert.deepEqual(glossary, { section: 'settings', settingsTab: 'glossary' });
+  assert.equal(workspaceCategory(glossary), 'armory');
+  assert.equal(dashboardRouteHash(glossary), '#/settings/glossary');
+  assert.equal(parseDashboardRoute('#/settings/glossary?view=admin').section, 'not-found');
+  assert.equal(workspaceCategory(parseDashboardRoute('#/teams?view=analytics')), 'dashboards');
+  assert.equal(workspaceCategory(parseDashboardRoute('#/teams/tech/room')), 'agents');
 });
 test('team workspace relates retained data without fabricating runtime tasks or sample activity', () => {
   const input = { tasks: [

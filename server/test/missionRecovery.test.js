@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createApplication } from '../src/server.js';
 import { LlmEngine } from '../src/llmEngine.js';
+import { telemetryBus } from '../src/eventBus.js';
+import { WebSocket } from 'ws';
 
 const path = (root) => join(root, '.maoc', 'state', 'mission-history.json');
 const temp = () => mkdtemp(join(tmpdir(), 'maoc-mission-recovery-'));
@@ -23,7 +25,17 @@ async function start(vaultDir, storageDriver, fetcher) {
     signal: AbortSignal.timeout(3000)
   });
   const get = async (path) => { const res = await request(path); assert.equal(res.status, 200, path); return res.json(); };
-  return { app, request, get };
+  const snapshot = () => new Promise((resolve, reject) => {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws`, { perMessageDeflate: false });
+    const timer = setTimeout(() => { socket.close(); reject(new Error('No fixture snapshot')); }, 3000);
+    socket.addEventListener('message', ({ data }) => {
+      const message = JSON.parse(data);
+      if (message.type !== 'SNAPSHOT') return;
+      clearTimeout(timer); socket.close(); resolve(message);
+    });
+    socket.addEventListener('error', () => { clearTimeout(timer); socket.close(); reject(new Error('Fixture WebSocket failed')); }, { once: true });
+  });
+  return { app, request, get, snapshot };
 }
 
 async function waitFor(read, condition) {
@@ -151,6 +163,16 @@ test('a restarted approval checkpoint does not recreate a live approval or provi
     const { task_id } = await submitted.json();
     const event = await waitFor(() => active.get('/events'), ({ events }) => events.some((x) => x.task_id === task_id && x.event_type === 'HITL_INTERRUPT'));
     const { approval_id } = event.events.find((x) => x.task_id === task_id && x.event_type === 'HITL_INTERRUPT');
+    // The live gate outlives both the snapshot window and the entire event ring.
+    for (let i = 0; i < 500; i++) telemetryBus.publish({ event_type: 'FIXTURE_ACTIVITY', source_agent: 'ARIA' });
+    assert.ok(!(await active.get('/events?limit=500')).events.some((entry) => entry.approval_id === approval_id));
+    const snapshot = await active.snapshot();
+    assert.deepEqual(snapshot.human_inputs, []);
+    assert.equal(snapshot.pending_approvals.length, 1);
+    assert.equal(snapshot.pending_approvals[0].approval_id, approval_id);
+    assert.equal(snapshot.pending_approvals[0].task_id, task_id);
+    assert.equal(snapshot.pending_approvals[0].source_agent, 'LEX');
+    assert.match(snapshot.pending_approvals[0].payload_summary, /Backups are verified/);
     const crashCopy = await temp();
     await mkdir(join(crashCopy, '.maoc', 'state'), { recursive: true });
     await copyFile(path(source), path(crashCopy));
@@ -160,8 +182,11 @@ test('a restarted approval checkpoint does not recreate a live approval or provi
     assert.equal(row.task_id, task_id);
     assert.equal(row.state, 'INTERRUPTED');
     assert.equal(row.last_state, 'WAITING_APPROVAL');
+    assert.deepEqual((await recovered.snapshot()).pending_approvals, []);
     assert.equal((await recovered.request(`/hitl/${approval_id}`, { decision: 'approve' })).status, 409);
     assert.equal(calls, 1);
+    assert.equal((await active.request(`/hitl/${approval_id}`, { decision: 'approve' })).status, 200);
+    assert.deepEqual((await active.snapshot()).pending_approvals, []);
   } finally { await recovered?.app.close(); await active.app.close(); }
 });
 

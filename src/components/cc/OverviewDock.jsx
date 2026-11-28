@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { ArrowRight, Check, CircleHelp, Radio, X } from 'lucide-react';
 import { cleanMission, overviewSnapshot } from '../../lib/dashboardModel.js';
+import { actionNotice } from '../../lib/workspaceAttention.js';
 
-export default function OverviewDock({ tasks, actionCount, connectionState, notices, readIds, onRead, onTask, onActivity, onMissions, suspended, toast, panel, setPanel, triggerRef, isOverview }) {
+export default function OverviewDock({ tasks, actionCount, connectionState, notices, readIds, onRead, onNotice, onActivity, onMissions, suspended, toast, panel, setPanel, triggerRef, isOverview }) {
   const headingRef = useRef(null);
   const snapshot = overviewSnapshot({ tasks, actionCount, connectionState, notices, readIds });
   const close = () => {
@@ -60,9 +61,9 @@ export default function OverviewDock({ tasks, actionCount, connectionState, noti
               const failed = ['FAILED', 'REJECTED', 'CANCELLED'].includes(notice.outcome || notice.schedule?.last?.status);
               return <li key={notice.event_id} data-notice-id={notice.event_id} data-read={read ? 'true' : 'false'}>
                 <div className="overview-notice-meta"><span>{failed ? 'Needs attention' : 'Mission update'}{!read && <b>New</b>}</span><time dateTime={notice.timestamp}>{new Date(notice.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</time></div>
-                <p>{cleanMission(notice.payload_summary) || 'มีการอัปเดตสถานะภารกิจ'}</p>
+                <p>{actionNotice(notice) || cleanMission(notice.payload_summary) || 'มีการอัปเดตสถานะภารกิจ'}</p>
                 <div className="overview-notice-actions">
-                  {notice.task_id && <button type="button" onClick={() => { onRead(notice.event_id); onTask(notice.task_id); }}>Open mission <ArrowRight size={14} aria-hidden="true" /></button>}
+                  {(notice.task_id || notice.event_type === 'SCHEDULE_UPDATED') && <button type="button" onClick={() => { onRead(notice.event_id); onNotice(notice); }}>{actionNotice(notice) || notice.event_type === 'SCHEDULE_UPDATED' ? 'Open details' : 'Open mission'} <ArrowRight size={14} aria-hidden="true" /></button>}
                   <button type="button" disabled={read} aria-label={`Mark notice ${notice.event_id} as read`} onClick={() => onRead(notice.event_id)}><Check size={14} aria-hidden="true" />{read ? 'Read' : 'Mark read'}</button>
                 </div>
               </li>;
@@ -72,8 +73,10 @@ export default function OverviewDock({ tasks, actionCount, connectionState, noti
         </section>}
       </div>
       {isOverview && <div className="overview-dock" role="group" aria-label="Overview status">
-        <span className="overview-dock-connection" title="Backend WebSocket connection, not AI provider health">{connection}</span>
-        <button type="button" id="overview-status-trigger" title="Status" aria-expanded={panel === 'status'} aria-controls={panel === 'status' ? 'overview-status-panel' : undefined} onClick={(event) => toggle('status', event)}><Radio size={15} aria-hidden="true" />Status</button>
+        <button type="button" id="overview-status-trigger" aria-expanded={panel === 'status'} aria-controls={panel === 'status' ? 'overview-status-panel' : undefined} onClick={(event) => toggle('status', event)}>
+          <Radio size={15} aria-hidden="true" />Status
+          {snapshot.connected ? <span className="overview-dock-counts"><span>Running <strong>{snapshot.running}</strong></span><span>Needs You <strong>{snapshot.needsYou}</strong></span></span> : connection}
+        </button>
       </div>}
     </>}
     </div>

@@ -151,6 +151,7 @@ test('REST, WebSocket, persistence hydration and shutdown integration', { timeou
   const fake = {
     listTasks: () => tasks,
     listHumanInputs: () => [],
+    listPendingApprovals: () => [],
     resolveHumanInput: () => false,
     submitTask: (description) => { const task = { id: 'test-task', state: 'RUNNING', description }; tasks.push(task); return task; },
     resolveHitl: (id) => id === 'valid-approval',
@@ -193,6 +194,7 @@ test('REST, WebSocket, persistence hydration and shutdown integration', { timeou
   telemetryBus.publish({ event_type: 'TOOL_CALL', source_agent: 'BYTE' });
   assert.equal(JSON.parse((await eventMessage)[0].toString()).type, 'EVENT');
   assert.equal(messages[0].type, 'SNAPSHOT');
+  assert.deepEqual(messages[0].pending_approvals, []);
   const disconnected = once(socket, 'close');
   await application.close();
   assert.equal((await disconnected)[0], 1001);

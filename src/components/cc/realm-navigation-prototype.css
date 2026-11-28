@@ -1,0 +1,52 @@
+.core-bar > button { position: relative; padding-right: 32px; transition: color 170ms ease, background-color 170ms ease, border-color 170ms ease; }
+.core-bar > button::after { content: ''; position: absolute; right: 16px; bottom: 16px; width: 5px; height: 5px; border: solid currentColor; border-width: 0 1px 1px 0; transform: rotate(45deg); transition: transform 170ms ease; }
+.core-bar > button[aria-expanded="true"]::after { transform: rotate(225deg); }
+.core-bar > button[aria-current] { color: var(--ink); border-bottom-color: var(--accent); background: rgba(var(--rgb), .10); }
+.core-bar > button[aria-current] small { color: var(--accent); }
+[data-workspace] { margin-top: 14px; }
+.category-bar { align-items: stretch; margin-top: 0; background: var(--surface); border: 1px solid var(--line); transform-origin: top; }
+.category-bar:not([hidden]) { animation: reveal-views 200ms ease-out both; }
+@keyframes reveal-views { from { opacity: 0; clip-path: inset(0 0 100%); transform: translateY(-7px); } to { opacity: 1; clip-path: inset(0); transform: translateY(0); } }
+.category-bar a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-bottom: 2px solid transparent; color: var(--muted); font-size: 13px; font-weight: 620; transition: color 170ms ease, background-color 170ms ease, border-color 170ms ease; }
+.category-bar a:hover { color: var(--ink); background: var(--hover); }
+.category-bar a[aria-current="page"] { color: var(--ink); border-color: var(--accent); background: rgba(var(--rgb), .10); }
+.category-bar a:focus-visible { outline-offset: -3px; }
+
+.signal-field { position: absolute; z-index: 0; inset: 0; pointer-events: none; overflow: hidden; color: rgb(var(--rgb)); mask-image: linear-gradient(90deg, transparent 3%, #0005 31%, black 62%); }
+.signal-field svg { width: 100%; height: 100%; }
+.signal-field circle { fill: currentColor; opacity: .36; }
+.signal-tracks { stroke: currentColor; opacity: .24; stroke-width: .7; }
+.signal-pulse { opacity: .62; stroke: currentColor; stroke-linecap: round; stroke-dasharray: 8 92; animation: data-travel 6s linear infinite; }
+.signal-pulse-late { animation-delay: -2.1s; }
+.signal-pulse-last { animation-delay: -4.3s; }
+.signal-star { opacity: 0; stroke: currentColor; stroke-linecap: round; animation: star-fall 12s linear infinite; }
+@keyframes data-travel { to { stroke-dashoffset: -100; } }
+@keyframes star-fall { 0%, 68% { opacity: 0; transform: translate(22px, -15px); } 74% { opacity: .52; } 84%, 100% { opacity: 0; transform: translate(-28px, 18px); } }
+[data-effects="off"] .signal-field :is(.signal-pulse, .signal-star) { animation: none; opacity: 0; }
+
+.console-rows { max-width: 650px; margin: 0 0 22px; }
+.console-rows > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 18px; padding: 13px 0; border-top: 1px solid var(--line); }
+.console-rows dd { margin: 0; color: var(--muted); }
+.console-link { display: inline-flex; min-height: 44px; align-items: center; color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.guide-steps { padding-inline-start: 22px; line-height: 1.7; color: var(--muted); }
+.status-content { padding-block: 0; }
+.status-trigger { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 5px; margin-inline-start: -5px; background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; }
+.status-trigger:hover { color: var(--ink); background: var(--hover); }
+.status-dialog { width: min(550px, calc(100% - 28px)); max-height: 80dvh; padding: clamp(16px, 4vw, 30px); border: 1px solid var(--line); background: var(--surface); color: var(--ink); box-shadow: 0 20px 70px #02040a63; }
+.status-dialog::backdrop { background: #070b17a8; }
+.status-dialog h2 { margin: 0 0 16px; }
+.status-dialog > p { margin: 0; color: var(--muted); line-height: 1.5; }
+.dialog-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.dialog-heading .eyebrow { margin: 3px 0 7px; }
+@media (max-width: 650px) {
+  .core-bar > button { padding-inline: 2px; }
+  .core-bar > button::after { position: static; display: block; margin: 3px auto 0; }
+  .category-bar a { padding-inline: 10px; }
+  .signal-field { top: 21%; mask-image: linear-gradient(180deg, transparent, black 60%); }
+  .status-trigger { gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .core-bar > button, .core-bar > button::after, .category-bar a { transition: none; }
+  .category-bar:not([hidden]) { animation: none; }
+  .signal-field :is(.signal-pulse, .signal-star) { animation: none; opacity: 0; }
+}

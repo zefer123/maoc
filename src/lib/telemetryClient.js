@@ -45,6 +45,7 @@ export function createTelemetryClient(url, handlers = {}) {
       }
       if (data.type === 'EVENT') handlers.onEvent?.(data.event);
       if (data.type === 'COLLECTION_CHANGED' && collectionRealtime) handlers.onCollectionChanged?.(data);
+      if (data.type === 'HUD_PREFERENCES_UPDATED' && Number.isSafeInteger(data.revision) && data.revision > 0) handlers.onHudPreferencesUpdated?.();
       if (data.type === 'ERROR') handlers.onServerError?.(data);
     };
   }

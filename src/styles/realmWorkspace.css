@@ -1,0 +1,174 @@
+.i47-core-row { display:flex;align-items:center;gap:12px;min-width:0;color:var(--guild-muted);font-size:12px }
+.i47-core-bar { grid-area:2 / 1 / -1 / 2;position:relative;z-index:28;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;padding:10px 6px;overflow:hidden;border-inline-end:1px solid var(--guild-border);background:color-mix(in srgb,var(--hud-header) 84%,transparent) }
+.i47-shell .i47-core-bar .dash-nav-item { display:flex;width:100%;min-width:44px;min-height:46px;justify-content:flex-start;gap:6px;padding:6px;border-radius:7px;outline-offset:-2px;font:650 13px var(--guild-font);white-space:normal;overflow-wrap:anywhere }
+.i47-core-bar .dash-nav-item > svg { flex:none }
+.i47-core-bar .dash-nav-item > span { min-width:0 }
+.i47-shell .i47-core-bar .i47-core-trigger { flex:none;min-height:52px;border:1px solid var(--guild-border);color:var(--guild-text);background:var(--hud-control) }
+.i47-shell .i47-core-bar .dash-nav-item:is(:hover,:focus-visible,[aria-expanded=true]) { background:color-mix(in srgb,var(--section-accent) 12%,var(--hud-header));border-color:var(--section-line) }
+.i47-nav-chevron { margin-inline-start:auto;opacity:.7 }
+[aria-expanded=true] > .i47-nav-chevron { rotate:180deg }
+.i47-shell[data-visual-motion=on] .i47-core-bar .dash-nav-item { transition:background-color .16s,border-color .16s }
+.i47-shell[data-visual-motion=on] .i47-nav-chevron { transition:rotate .18s }
+.i47-core-row > [data-current-location] { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap }
+.i47-drawers { margin-inline-start:auto;display:flex;flex:none;gap:4px }
+.i47-drawers > button { min-height:44px;gap:4px;font:700 11px var(--guild-mono) }
+.i47-drawer,.i47-action-overlay { color:var(--guild-text);background:var(--hud-stage,#171524);border:1px solid var(--guild-border);border-radius:10px;box-shadow:0 16px 44px #0007;min-width:0;overflow:hidden }
+.i47-drawer { position:absolute;z-index:55;inset:100% clamp(6px,2vw,22px) auto auto;width:min(24rem,calc(100% - 12px));display:flex;flex-direction:column;max-height:min(68dvh,calc(100dvh - 155px)) }
+.i47-drawer header,.i47-action-overlay header { display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 12px;border-bottom:1px solid var(--guild-border);background:var(--hud-header);flex:none }
+.i47-drawer h2,.i47-action-overlay h2 { font-size:1rem;font-weight:750 }
+.i47-drawer header button,.i47-action-overlay header button { min-width:44px;min-height:44px }
+.i47-drawer-body,.i47-overlay-body { overflow:auto;overscroll-behavior:contain;padding:12px;overflow-wrap:anywhere;min-height:0 }
+.i47-drawer :is(ul,li),.i47-human-card,.i47-overlay-mission ul { list-style:none;margin:0;padding:0 }
+.i47-drawer li + li { margin-top:4px }
+.i47-drawer li button { display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;width:100%;min-height:44px;padding:6px 10px;color:var(--guild-text);background:var(--hud-control);border:1px solid var(--guild-border);border-radius:6px }
+.i47-drawer li button:hover { border-color:var(--hud-accent) }
+.i47-drawer li svg { flex:none }
+.i47-drawer li small,.i47-attention-section h3 small { color:var(--guild-muted) }
+.i47-drawer li small { display:block }
+.i47-attention-section { --signal:#afcaff;border-inline-start:3px solid var(--signal);padding:5px 0 5px 9px;margin-block:7px }
+.i47-attention-section[data-attention=blocked] { --signal:#ff9298 }
+.i47-attention-section[data-attention=degraded] { --signal:#ffbe79 }
+.i47-attention-section[data-attention=report] { --signal:#e5afff }
+.i47-attention-section h3 { font-size:13px;font-weight:750;margin-bottom:5px }
+.i47-action-overlay[open] { position:fixed;inset:0;margin:auto;display:flex;flex-direction:column;width:min(42rem,calc(100% - 16px));max-height:calc(100dvh - 16px);max-width:none;padding:0 }
+.i47-action-overlay::backdrop { background:#080811bb }
+.i47-overlay-body,.i47-overlay-mission { display:grid;gap:12px;align-content:start }
+.i47-overlay-body textarea { font-size:16px }
+.i47-overlay-body summary { cursor:pointer }
+.i47-overlay-mission details { padding:8px;border:1px solid var(--guild-border);border-radius:4px }
+.i47-overlay-mission li { padding-block:6px }
+@media (max-width:420px) {
+  .i47-core-row { gap:4px }
+  .i47-drawers > button { padding-inline:5px }
+  .i47-drawers > button > svg { display:none }
+  .i47-drawers > button .dash-badge { padding-inline:3px }
+}
+.i47-core-menu { min-height:0;min-width:0;padding:6px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-gutter:stable }
+.i47-core-menu[hidden],.i47-core-menu [hidden] { display:none }
+.i47-core-menu:not([hidden]) { animation:i47-reveal .20s ease-out both }
+.i47-core-menu-label { padding:6px 9px 10px;color:var(--guild-muted);font:10px var(--guild-mono);letter-spacing:.13em;text-transform:uppercase }
+.i47-core-menu .i47-categories { display:grid;gap:4px;overflow:visible }
+.i47-core-menu .i47-category { display:block;min-width:0 }
+.i47-core-destinations { border-inline-start:1px solid var(--section-line);margin:2px 0 6px 10px;padding-inline-start:6px;animation:i47-reveal .18s ease-out both }
+.i47-core-description { color:var(--guild-muted);padding:5px 8px;font-size:12px;line-height:1.4 }
+.i47-core-menu .i47-context-nav { display:grid;grid-template-columns:minmax(0,1fr);gap:1px;margin:0;padding:0;list-style:none;overflow:visible }
+.i47-core-menu .i47-context-nav > li,.i47-core-link > span:first-child { min-width:0 }
+.i47-core-menu .i47-context-nav .i47-core-link { display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 10px;text-align:left;white-space:normal;color:var(--guild-text);font:500 13px var(--guild-font);overflow-wrap:anywhere }
+.i47-core-link:hover,.i47-core-menu .i47-context-nav .i47-core-link[aria-current] { color:var(--guild-text);background:var(--hud-control);text-decoration:none }
+.i47-core-link,.i47-core-menu .dash-nav-item { outline-offset:-2px;border-radius:5px }
+.i47-core-link { transition:transform .14s ease }
+.i47-current-dot { flex:none;width:6px;height:6px;border-radius:50%;background:var(--hud-accent) }
+@media (min-width:761px) {
+  .i47-core-menu { padding-inline:4px }
+  .i47-shell .i47-core-menu .dash-nav-item { gap:4px;padding-inline:4px }
+  .i47-core-menu .i47-nav-chevron { width:11px }
+  .i47-core-menu .i47-context-nav .i47-core-link { gap:4px;padding-inline:5px }
+}
+@media (max-width:760px) {
+  .i47-core-bar { grid-area:2 / 1 / 3 / -1;z-index:29;padding:5px 6px;overflow:visible;border-inline-end:0;border-block-end:1px solid var(--guild-border) }
+  .i47-shell .i47-core-bar .i47-core-trigger { min-height:44px }
+  /* A top-bar disclosure: its panel never participates in the workspace grid. */
+  .i47-core-bar > .i47-core-menu { position:absolute;inset:calc(100% + 1px) 6px auto;max-block-size:min(48dvh,calc(100dvh - var(--i47-header-height,106px) - 114px));background:var(--hud-header) }
+}
+.dash-shell.i47-shell .overview-feedback-stack.dashboard-notices-stack { top:calc(var(--i47-header-height,106px) + 2px);max-height:calc(100dvh - var(--i47-header-height,106px) - 54px) }
+.dash-shell.i47-shell.has-overview-dock .overview-feedback-stack.dashboard-notices-stack { max-height:calc(100dvh - var(--i47-header-height,106px) - 110px) }
+.dash-shell.i47-shell .overview-dock-slot { background:transparent;border-top:0 }
+@keyframes i47-reveal { from { opacity:0 } to { opacity:1 } }
+@keyframes i47-submenu { from { opacity:0;transform:translateX(-5px) } to { opacity:1;transform:none } }
+.i47-visual-stage { position:relative;isolation:isolate;overflow:hidden;border:1px solid var(--guild-border);background:radial-gradient(ellipse at 72% 42%,var(--hud-stage-light),transparent 65%),var(--hud-stage);margin-bottom:16px }
+.i47-stage-band,.i47-camera { display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--guild-muted);font:11px var(--guild-mono);letter-spacing:.04em }
+.i47-stage-band { min-height:42px;padding:8px 16px;border-bottom:1px solid var(--guild-border) }
+.i47-stage-body { position:relative;display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1fr);min-height:clamp(340px,47vw,455px);align-items:stretch }
+.i47-stage-copy { align-self:center;padding:clamp(18px,4vw,55px);min-width:0 }
+.i47-stage-copy h1 { font-size:clamp(42px,6.1vw,97px);font-weight:750;line-height:.94;letter-spacing:-.065em;overflow-wrap:break-word }
+.i47-stage-copy h1 em { display:block;color:var(--hud-accent);font-style:normal }
+.i47-stage-copy .i47-greeting { display:block;margin-top:14px;color:var(--guild-muted);font:500 14px/1.4 var(--guild-font);letter-spacing:0;overflow-wrap:anywhere }
+.i47-stage-copy > p { margin-block:16px;color:var(--guild-muted) }
+.i47-weather-reading { display:flex;align-items:center;gap:12px;margin:17px 0;color:var(--guild-text) }
+.i47-weather-reading strong { font-size:clamp(26px,4vw,48px);font-weight:650;white-space:nowrap }
+.i47-weather-reading small,.i47-forecast-days small { display:block;color:var(--guild-muted) }
+.i47-shell { position:relative;isolation:isolate }
+.i47-workspace-ambient { --i47-fx-white:#e9fbff;position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:-1 }
+.i47-ambient-haze { position:absolute;inset:-32px;transform:translate(calc(var(--px,0px) * -.38),calc(var(--py,0px) * -.38));background:radial-gradient(ellipse at 88% 18%,color-mix(in srgb,var(--hud-accent) 24%,transparent),transparent 48%),radial-gradient(ellipse at 18% 92%,color-mix(in srgb,#7240bf 37%,transparent),transparent 48%),radial-gradient(ellipse at 72% 100%,#1d7aaf35,transparent 52%) }
+.i47-signal-field,.i47-star-plane { position:absolute;inset:-32px;width:calc(100% + 64px);height:calc(100% + 64px);transform:translate(var(--px,0px),var(--py,0px)) }
+.i47-star-plane { fill:var(--i47-fx-white) }
+.i47-star-plane:nth-child(1) { --depth:.18;opacity:.38 }
+.i47-star-plane:nth-child(2) { --depth:.52;opacity:.62;fill:color-mix(in srgb,var(--i47-fx-white) 75%,var(--hud-accent)) }
+.i47-star-plane:nth-child(3) { --depth:1;opacity:.87;filter:drop-shadow(0 0 3px var(--hud-accent)) }
+.i47-star-plane { transform:translate(calc(var(--px,0px) * var(--depth)),calc(var(--py,0px) * var(--depth))) }
+[data-atmosphere=stars] .i47-ambient-haze { opacity:.42 }
+.i47-ambient-stars { fill:var(--hud-accent);opacity:.37 }
+.i47-signal-track { stroke:var(--hud-accent);stroke-width:1.2;opacity:.32;vector-effect:non-scaling-stroke }
+.i47-cyber-links circle { fill:var(--hud-accent);opacity:.58;filter:drop-shadow(0 0 4px var(--hud-accent)) }
+.i47-signal-field .i47-signal-pulse { stroke:var(--i47-fx-white);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:5 95;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 4px var(--hud-accent)) drop-shadow(0 0 9px var(--hud-accent));animation:i47-signal var(--i47-signal-cycle) linear var(--i47-signal-phase) infinite }
+.i47-signal-field .i47-signal-star { opacity:0;filter:drop-shadow(0 0 5px var(--hud-accent));animation:i47-star var(--i47-signal-cycle) linear var(--i47-signal-phase) infinite }
+.i47-signal-star path { stroke:url(#i47-meteor-tail);stroke-width:2.6;stroke-linecap:round }
+.i47-signal-star .i47-meteor-glow { stroke-width:8;opacity:.27 }
+.i47-signal-star circle { fill:var(--i47-fx-white) }
+.i47-shell:not([data-atmosphere=stars]) .i47-starfield,
+[data-atmosphere=stars] .i47-signal-field,[data-atmosphere=cyber-link] .i47-meteors,[data-atmosphere=meteor] .i47-cyber-links,[data-atmosphere=minimal] :is(.i47-signal-field,.i47-ambient-haze) { display:none }
+@keyframes i47-signal { to { stroke-dashoffset:-100 } }
+@keyframes i47-star { 0%,32% { opacity:0;transform:translate(-115px,-74px) } 40% { opacity:1;transform:translate(-63px,-40px) } 59% { opacity:1;transform:translate(93px,59px) } 71%,100% { opacity:0;transform:translate(170px,109px) } }
+.i47-scene { display:grid;grid-template-rows:minmax(220px,1fr) auto;min-width:0 }
+.i47-viewport { position:relative;overflow:hidden;touch-action:pan-y;cursor:grab;background-image:radial-gradient(var(--hud-stage-frame) 1px,transparent 1px);background-size:24px 24px }
+.i47-viewport:active { cursor:grabbing }
+.i47-viewport canvas { display:block;position:absolute;inset:0;width:100%;height:100% }
+.i47-scene-label { position:absolute;top:12px;right:12px;color:var(--guild-muted);font:11px var(--guild-mono) }
+.i47-camera { padding:4px 10px;border-top:1px solid var(--guild-border) }
+.i47-camera button { min-height:44px }
+.i47-camera output { white-space:nowrap }
+.i47-forecast { position:relative;padding:12px clamp(10px,2vw,20px) 16px;background:var(--hud-header);border-top:1px solid var(--guild-border) }
+.i47-forecast-head { display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 12px;margin-bottom:9px }
+.i47-forecast-head h2 { font-weight:650 }
+.i47-forecast-head p { color:var(--guild-muted);font-size:12px }
+.i47-forecast-days { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px }
+.i47-forecast-days button { display:grid;grid-template-columns:1fr auto;gap:3px 8px;text-align:left;min-width:0;min-height:64px }
+.i47-forecast-days button > span { color:var(--guild-muted);font:11px var(--guild-mono) }
+.i47-forecast-days button > svg { color:var(--hud-accent);justify-self:end }
+.i47-forecast-days button > strong { font-size:17px;font-variant-numeric:tabular-nums }
+.i47-forecast-days button > small { font-size:11px;line-height:1.25 }
+.i47-shell .i47-forecast button[aria-pressed=true],.i47-shell .i47-actions button[aria-pressed=true] { border-color:var(--hud-accent);box-shadow:inset 0 -2px var(--hud-accent) }
+.i47-home-feeds { position:relative;z-index:2;display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px }
+.i47-feed-trigger { min-height:44px;min-width:44px }
+.i47-feed-trigger strong { font:700 13px var(--guild-mono);color:var(--hud-accent) }
+.i47-hud-popup { position:absolute;inset:calc(100% + 4px) 0 auto auto;width:min(22rem,100%);max-height:min(24rem,52dvh);overflow:auto;overscroll-behavior:contain;animation:i47-submenu .18s ease-out both }
+.i47-hud-popup > header { display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px 4px 14px;border-bottom:1px solid var(--guild-border) }
+.i47-hud-popup h2 { font-weight:700;line-height:1.3 }
+.i47-hud-popup .i47-feed button { min-height:44px;max-width:100% }
+.i47-hud-popup .dash-task-card { min-width:0;flex-wrap:wrap }
+.i47-web-status { display:flex;align-items:center;justify-self:end;gap:clamp(6px,2vw,12px);margin:3px max(6px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom));padding:0 9px;font:10px var(--guild-mono);text-transform:uppercase;white-space:nowrap }
+.i47-web-status > button { min-width:44px;min-height:44px;text-align:left }
+.i47-device-clock { color:var(--guild-text) }
+.i47-status-dot { display:inline-block;width:6px;height:6px;border-radius:50%;background:#ef987d }
+.i47-status-dot[data-online=true] { background:#70d4a9 }
+.i47-session { color:var(--guild-text);background:var(--hud-header);border:1px solid var(--guild-border);text-transform:none;text-align:left;width:min(92vw,480px);padding:20px;font:14px/1.5 var(--guild-font) }
+.i47-session::backdrop { background:#060910a8 }
+.i47-session h2 { font-size:21px;font-weight:700 }
+.i47-session dl { margin:12px 0 }
+.i47-session dl div { display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;border-top:1px solid var(--guild-border);padding:8px 0 }
+.i47-session p { margin-bottom:12px }
+.i47-glossary dt { font-weight:700 }
+.i47-glossary dd { margin:4px 0 14px;color:var(--guild-muted) }
+.dash-shell.i47-shell[data-appearance=light] { --hud-header:#f3f6fd;--hud-control:#e6ecf8;--hud-stage:#eef3fc;--hud-stage-light:#90a8db57;--hud-stage-frame:#586b9d35;--hud-card:#edf2fa;--hud-dock:#e8eef9;--guild-text:#18233d;--guild-muted:#415272;--guild-border:#b7c4da;--guild-panel:#fbfcff;--guild-ink:#f3f6fc;--hud-accent:#3655a0;color:var(--guild-text);background:var(--guild-ink);color-scheme:light }
+.i47-shell[data-appearance=light] .i47-workspace-ambient { --i47-fx-white:#3655a0;opacity:.55 }
+.i47-shell[data-appearance=light] .dash-surface { background:var(--guild-panel) }
+.i47-shell[data-appearance=light] .i47-category .dash-nav-item.is-active { color:var(--guild-text) }
+@media (max-width:650px) {
+  .i47-stage-body { grid-template-columns:minmax(0,1fr);min-height:0 }
+  .i47-stage-copy { padding:17px }
+  .i47-stage-copy h1 { font-size:clamp(37px,11vw,68px) }
+  .i47-camera output { display:none }
+  .i47-forecast-days { grid-template-columns:repeat(2,minmax(0,1fr)) }
+  .i47-core-menu .i47-context-nav .i47-core-link { padding-inline:5px;font-size:12px }
+}
+[data-visual-motion=off] .i47-signal-field :is(.i47-signal-pulse,.i47-signal-star) { animation:none;opacity:0 }
+.i47-appearance { display:grid;gap:8px;margin:0 0 14px;padding:8px 10px 10px;border:1px solid var(--guild-border) }
+.i47-appearance label:first-of-type { display:grid;gap:4px }
+.i47-appearance select { min-height:44px;padding:6px 10px;border:1px solid var(--guild-border);background:var(--hud-control);color:var(--guild-text) }
+.i47-appearance .i47-checkbox { display:flex;gap:8px;align-items:center;min-height:44px }
+.i47-appearance legend { color:var(--guild-muted);padding-inline:4px }
+.i47-shell[data-visual-motion=off] :is(.i47-core-bar .dash-nav-item,.i47-core-menu,.i47-core-destinations,.i47-core-link,.i47-hud-popup) { transition:none;animation:none;transform:none }
+@media (prefers-reduced-motion:reduce) {
+  .i47-core-menu:not([hidden]),.i47-core-destinations,.i47-signal-field :is(.i47-signal-pulse,.i47-signal-star) { transition:none;animation:none }
+  .i47-signal-field :is(.i47-signal-pulse,.i47-signal-star) { opacity:0 }
+}

@@ -1,31 +1,108 @@
-import { Activity, Bell, BookOpen, ChevronRight, Home, Layers, Menu, Plus, Search, Settings, Users, X } from 'lucide-react';
-import { DASHBOARD_SECTIONS } from '../../lib/dashboardModel.js';
-import { NAVIGATION_GROUPS, SECTION_VIEWS, dashboardContext, isNavigationView } from '../../lib/dashboardPresentation.js';
+import { Bell, ChevronDown, Cpu, Home, Layers, Plus, Search, Shield, Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { HOME_VIEWS, dashboardRouteHash, workspaceCategory } from '../../lib/dashboardRoute.js';
+import { SECTION_VIEWS, dashboardContext, isNavigationView } from '../../lib/dashboardPresentation.js';
 
-const icons = { overview: Home, missions: Layers, teams: Users, library: BookOpen, activity: Activity, settings: Settings };
-export default function DashboardNavigation({ section, route, onVisit, onNavigate, actions, unread, connectionState, onCreate, search, onSearch, menuOpen, setMenuOpen, searchRef, noticesOpen, onNotices, feedbackSuspended }) {
-  const current = DASHBOARD_SECTIONS.find((item) => item.id === section) || DASHBOARD_SECTIONS[0];
-  const item = (entry) => {
-    const Icon = icons[entry.id]; const count = entry.id === 'activity' ? actions : 0;
-    return <button key={entry.id} data-section={entry.id} type="button" title={entry.description} aria-label={entry.id === 'activity' ? `${entry.label}, ${actions} pending actions` : entry.label} aria-current={section === entry.id ? 'page' : undefined} onClick={() => { onNavigate(entry.id); setMenuOpen(false); }} className={`dash-nav-item ${section === entry.id ? 'is-active' : ''}`}>
-      <Icon size={19} aria-hidden="true" /><span>{entry.label}</span>{count > 0 && <span className="dash-badge ml-auto">{count}</span>}
-    </button>;
+const categories = [['home', 'Home', Home], ['dashboards', 'Dashboards', Layers], ['agents', 'Agents', Users], ['armory', 'Armory', Shield], ['copilot-47', 'Copilot 47', Cpu]];
+const dashboardLinks = [
+  { label: 'Missions', route: { section: 'missions' } },
+  { label: 'Analytics', route: { section: 'teams', teamTab: 'analytics' } },
+  { label: 'Library', route: { section: 'library' } },
+  { label: 'Activity', route: { section: 'activity' } }
+];
+const descriptions = {
+  dashboards: 'ภารกิจ ผลงาน และข้อมูลจากการทำงาน', agents: 'ทีม พื้นที่ทำงาน และโครงสร้าง Agent',
+  armory: 'การแสดงผล การตั้งค่า และคำศัพท์', 'copilot-47': 'เขียนและตรวจคำสั่งก่อนส่ง',
+};
+
+export default function DashboardNavigation({ route, onVisit, actions, active, unread, connectionState, driver, onCreate, search, onSearch, searchRef, noticesOpen, onNotices, feedbackSuspended, drawer }) {
+  const category = workspaceCategory(route) ?? 'home';
+  const [selected, setSelected] = useState(null);
+  const expanded = selected !== null;
+  const [, categoryLabel, CategoryIcon] = categories.find(([id]) => id === category);
+  const menu = useRef(null);
+  const header = useRef(null);
+  const trigger = useRef(null);
+  const pendingFocus = useRef(null);
+  useEffect(() => {
+    const node = header.current, shell = node.parentElement;
+    const sync = () => shell.style.setProperty('--i47-header-height', `${node.offsetHeight}px`);
+    sync(); const observer = new ResizeObserver(sync); observer.observe(node);
+    return () => { observer.disconnect(); shell.style.removeProperty('--i47-header-height'); };
+  }, []);
+  const local = {
+    home: HOME_VIEWS.map(({ id, label }) => ({ label, route: { section: 'home', homeView: id }, home: id })),
+    dashboards: [{ label: 'Dashboards', route: { section: 'dashboards' } }, ...dashboardLinks],
+    agents: [{ label: 'Agents', route: { section: 'agents' } }, ...SECTION_VIEWS.teams.filter(({ route }) => route.teamTab !== 'analytics')],
+    armory: [{ label: 'Armory', route: { section: 'armory' } }, { label: 'Settings', route: { section: 'settings' } }, { label: 'Glossary', route: { section: 'settings', settingsTab: 'glossary' } }],
+    'copilot-47': [{ label: 'Copilot 47', route: { section: 'copilot-47' } }]
   };
-  const contextualViews = (SECTION_VIEWS[section] || []).map((view) => <button type="button" key={view.label} data-nav-view={view.label} aria-current={isNavigationView(route, view.route) ? 'page' : undefined} onClick={() => { onVisit(view.route); setMenuOpen(false); }}><span aria-hidden="true" />{view.label}</button>);
-  const groups = NAVIGATION_GROUPS.map((group) => <div className="guild-nav-group" key={group.label}><p className="dash-sidebar-caption">{group.label}</p><nav aria-label={group.description}>{group.sections.map((id) => <div key={id}>{item(DASHBOARD_SECTIONS.find((entry) => entry.id === id))}{section === id && contextualViews.length > 0 && <div className="guild-subnav" data-section={id} aria-label={`${current.label} views`}>{contextualViews}</div>}</div>)}</nav></div>);
+  const current = (destination) => isNavigationView(route, destination) || (route.section === 'overview' && destination.homeView === 'deck') || (!destination.teamTab && dashboardRouteHash(route) === dashboardRouteHash(destination));
+  const close = () => { setSelected(null); pendingFocus.current = null; };
+  useEffect(() => {
+    if (!expanded) return;
+    const outside = (event) => { if (!menu.current?.contains(event.target)) close(); };
+    const keyboard = (event) => {
+      if (event.defaultPrevented || event.key !== 'Escape') return;
+      if (menu.current?.contains(document.activeElement)) {
+        event.preventDefault(); trigger.current?.focus({ preventScroll: true });
+      }
+      close();
+    };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('focusin', outside);
+    document.addEventListener('keydown', keyboard);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('focusin', outside); document.removeEventListener('keydown', keyboard); };
+  }, [expanded]);
+  useEffect(close, [route]);
+  const visit = (destination) => {
+    if (menu.current?.contains(document.activeElement)) trigger.current?.focus({ preventScroll: true });
+    close(); onVisit(destination);
+  };
+  useEffect(() => {
+    if (!pendingFocus.current) return;
+    menu.current.querySelector(pendingFocus.current)?.focus();
+    pendingFocus.current = null;
+  });
+  const activate = (id, focus) => {
+    if (selected === id && focus) menu.current.querySelector(focus)?.focus();
+    else { pendingFocus.current = focus; setSelected(id); }
+  };
+  const location = route.section === 'home' ? dashboardContext(route) : local[category]?.find(({ route: destination }) => current(destination))?.label || dashboardContext(route);
   return <>
     <a href="#dashboard-content" className="dash-skip" onClick={(event) => { event.preventDefault(); document.getElementById('dashboard-content')?.focus(); }}>Skip to main content</a>
-    <header className="dash-topbar">
-      <button type="button" className="dash-icon-button lg:hidden" title={menuOpen ? 'Close menu' : 'Open menu'} aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
-      <button type="button" className="dash-brand" title="Overview" aria-label="MAOC Overview" onClick={() => onNavigate('overview')}><span className="dash-brand-mark" aria-hidden="true"><svg viewBox="0 0 32 36" fill="none" shapeRendering="crispEdges"><path d="M5 3h22v22l-11 8L5 25Z" fill="#292435" stroke="currentColor" strokeWidth="2" /><path d="m9 13 7-4 7 4-7 4-7-4Zm0 6 7 4 7-4m-14 6 7 4 7-4" stroke="currentColor" strokeWidth="2" /></svg></span><span>MAOC<small>GUILD COMMAND CENTER</small></span></button>
-      <div className="guild-location" aria-label="Current location"><span>WORKSPACE <ChevronRight size={12} /> {current.label}</span><strong>{dashboardContext(route)}</strong></div>
-      <label className="dash-search"><Search size={17} aria-hidden="true" /><span className="sr-only">Search missions, teams or deliverables</span><input ref={searchRef} value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search missions, teams, deliverables…" /><kbd className="hidden text-xs text-slate-500 md:block">⌘/Ctrl K</kbd></label>
-      <span title="Backend WebSocket connection, not API key or AI provider verification" className={`dash-connection ${connectionState === 'live' ? 'is-live' : ''}`}><span /><span className="hidden sm:inline">{connectionState === 'live' ? 'Connected' : connectionState === 'connecting' ? 'Connecting' : 'Offline'}</span></span>
-      <button type="button" id="dashboard-notices-trigger" className="dash-icon-button relative" title="Notices" aria-label={`Notices, ${unread} unread`} aria-expanded={noticesOpen} aria-controls={noticesOpen ? 'overview-notices-panel' : undefined} disabled={feedbackSuspended} onClick={onNotices}><Bell size={20} aria-hidden="true" />{unread > 0 && <span className="dash-notification-dot" aria-hidden="true">{unread}</span>}</button>
-      <button type="button" aria-label="Create mission" title="Create mission" className="dash-button primary" onClick={onCreate}><Plus size={18} /><span className="hidden sm:inline">Create mission</span></button>
+    <header className="dash-topbar i47-topbar" ref={header}>
+      <div className="i47-brand-row">
+        <button type="button" className="dash-brand" onClick={() => visit({ section: 'home' })}><span className="dash-brand-mark" aria-hidden="true">47</span><span>Intelligent 47 <small>(Forty-Seven)</small></span></button>
+        <label className="dash-search"><Search size={16} aria-hidden="true" /><span className="sr-only">Search missions, teams or deliverables</span><input ref={searchRef} value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search workspace…" /></label>
+        <div className="i47-status" aria-label="Workspace telemetry"><span title="Backend WebSocket connection, not AI provider health" className={`dash-connection ${connectionState === 'live' ? 'is-live' : ''}`}><span />WS {connectionState === 'live' ? 'LINK' : connectionState === 'connecting' ? 'CONNECTING' : 'OFFLINE'}</span><span>ACTIVE {connectionState === 'live' ? active : '—'}</span><span>GATES {connectionState === 'live' ? actions : '—'}</span><span>DRIVER: {connectionState === 'live' && driver ? driver : '—'}</span></div>
+        <button type="button" id="dashboard-notices-trigger" className="dash-icon-button relative" title="Notices" aria-label={`Notices, ${unread} unread`} aria-expanded={noticesOpen} aria-controls={noticesOpen ? 'overview-notices-panel' : undefined} disabled={feedbackSuspended} onClick={onNotices}><Bell size={20} aria-hidden="true" />{unread > 0 && <span className="dash-notification-dot" aria-hidden="true">{unread}</span>}</button>
+        <button type="button" aria-label="Create mission" title="Create mission" className="dash-button primary" onClick={onCreate}><Plus size={18} /><span className="hidden sm:inline">Create mission</span></button>
+      </div>
+      <div className="i47-core-row"><span data-current-location>{location}</span>{drawer}</div>
     </header>
-    <aside className="dash-sidebar"><div className="guild-workspace-label"><span aria-hidden="true">✦</span><div><strong>The working guild</strong><small>YOUR LOCAL WORKSPACE</small></div></div>{groups}<div className="guild-sidebar-footer"><div className="guild-registry"><span>GUILD REGISTRY</span><div><strong>27 <small>Agents</small></strong><i aria-hidden="true" /><strong>8 <small>Teams</small></strong></div><p>สมาชิกในระบบ · ไม่ใช่จำนวนออนไลน์</p></div><nav aria-label="Settings navigation">{item(DASHBOARD_SECTIONS[5])}</nav><p className="guild-safety-note">ข้อมูลสดเมื่อเชื่อมต่อ backend<br />การอนุมัติรายงาน ≠ สิทธิ์ซื้อขาย</p></div></aside>
-    {menuOpen && <div className="dash-mobile-menu"><button className="absolute inset-0 bg-black/70" aria-label="Close menu" onClick={() => setMenuOpen(false)} /><div className="guild-mobile-menu-panel"><p className="guild-mobile-menu-title">Explore your workspace</p><nav aria-label="More navigation">{DASHBOARD_SECTIONS.map(item)}</nav>{contextualViews.length > 0 && <div className="guild-subnav" data-section={section} aria-label={`${current.label} views`}>{contextualViews}</div>}</div></div>}
-    <nav aria-label="Mobile navigation" className="dash-mobile-nav">{DASHBOARD_SECTIONS.filter((entry) => ['overview', 'missions', 'library', 'activity'].includes(entry.id)).map(item)}<button type="button" data-section={['teams', 'settings'].includes(section) ? section : undefined} title="More navigation" className={`dash-nav-item ${menuOpen || ['teams', 'settings'].includes(section) ? 'is-active' : ''}`} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><Menu size={19} /><span>More</span></button></nav>
+    <nav className="i47-core-bar" aria-label="Workspace pages" ref={menu}>
+      <button ref={trigger} id="i47-core-trigger" type="button" className="dash-nav-item i47-core-trigger" data-current-core={category} data-section={category}
+        aria-label={`Workspace menu: ${categoryLabel}`} aria-expanded={expanded} aria-controls="i47-core-menu"
+        onKeyDown={(event) => { if (event.key === 'ArrowDown') { event.preventDefault(); activate(category, `#i47-core-${category} button`); } }}
+        onClick={(event) => { if (expanded) close(); else activate(category, event.detail === 0 ? `#i47-heading-${category}` : null); }}>
+        <CategoryIcon size={18} aria-hidden="true" /><span>{categoryLabel}</span><ChevronDown size={14} className="i47-nav-chevron" aria-hidden="true" />
+      </button>
+      <div id="i47-core-menu" className="i47-core-menu" hidden={!expanded}>
+        <div className="i47-core-menu-label">Workspace</div>
+        <div className="i47-categories">{categories.map(([id, label, Icon]) => <section key={id} className="i47-category" data-section={id} aria-labelledby={`i47-heading-${id}`}>
+          <button type="button" id={`i47-heading-${id}`} className={`dash-nav-item${category === id ? ' is-active' : ''}`} aria-current={category === id ? 'true' : undefined} aria-expanded={selected === id} aria-controls={`i47-core-${id}`}
+            onKeyDown={(event) => { if (event.key === 'ArrowDown' || event.key === 'ArrowRight') { event.preventDefault(); activate(id, `#i47-core-${id} button`); } }}
+            onClick={(event) => activate(id, event.detail === 0 ? `#i47-core-${id} button` : null)}><Icon size={16} aria-hidden="true" /><span>{label}</span><ChevronDown size={14} className="i47-nav-chevron" aria-hidden="true" /></button>
+          <div className="i47-core-destinations" hidden={selected !== id}>
+            {descriptions[id] && <p className="i47-core-description" lang="th">{descriptions[id]}</p>}
+            <ul id={`i47-core-${id}`} className="i47-context-nav" aria-label={`${label} pages`} hidden={selected !== id}>{local[id].map(({ label, route: destination, home }) => {
+              const isCurrent = current(destination);
+              return <li key={label}><button data-nav-view={label} data-home-view={home} type="button" className="i47-core-link" aria-current={isCurrent ? 'location' : undefined} onClick={() => visit(destination)}><span>{label}{label === 'Activity' && actions > 0 && <span className="dash-badge" aria-label={`${actions} pending actions`}>{actions}</span>}</span>{isCurrent && <span className="i47-current-dot" aria-hidden="true" />}</button></li>;
+            })}</ul>
+          </div>
+        </section>)}</div>
+      </div>
+    </nav>
   </>;
 }

@@ -1,0 +1,129 @@
+.dash-shell.i47-shell {
+  --hud-accent: var(--hud-accent-custom, var(--hud-theme-accent));
+  --hud-theme-accent: #e4ca93;
+  --hud-header: #171722;
+  --hud-control: #272331;
+  --hud-stage: #111321;
+  --hud-stage-light: #745b8d40;
+  --hud-stage-frame: #c1a37570;
+  --hud-card: #22202f;
+  --hud-dock: #100e1b;
+  --guild-mono: 'Cascadia Mono', Consolas, ui-monospace, monospace;
+  --i47-rail-width: 162px;
+  grid-template: auto minmax(0,1fr) auto / var(--i47-rail-width) minmax(0,1fr);
+}
+.dash-shell.i47-shell.has-overview-dock { grid-template-rows: auto minmax(0,1fr) 52px auto; }
+.i47-shell[data-hud-theme="kali-cyber"] {
+  --hud-theme-accent: #65e8ef;
+  --hud-header: #10171e;
+  --hud-control: #18232c;
+  --hud-stage: #0c151d;
+  --hud-stage-light: #264f6757;
+  --hud-stage-frame: #5c899b80;
+  --hud-card: #18242e;
+  --hud-dock: #10171e;
+  --guild-ink: #0c1118;
+  --guild-panel: #151e27;
+  --guild-border: #7c9ba447;
+  --guild-muted: #bac7d2;
+  --guild-text: #f0f4f7;
+}
+/* The Eternal Nexus: Obsidian/Midnight surfaces and Astral/Celestial light.
+   Hex values are the app's interpretation, not values from the concept brief. */
+.dash-shell.i47-shell[data-hud-theme="realm-cyber"] {
+  --hud-theme-accent: var(--realm-lavender);
+  --hud-header: #171526;
+  --hud-control: #252039;
+  --hud-stage: #151222;
+  --hud-stage-light: #735ea25c;
+  --hud-stage-frame: #8fc5f566;
+  --hud-card: #211a32;
+  --hud-dock: #151221;
+  --guild-ink: #110f1c;
+  --guild-panel: #201c2d;
+  --guild-border: #9b87bb60;
+  --guild-muted: #c6bbd4;
+  --guild-text: #f2edf8;
+}
+.i47-shell[data-workspace-category="home"], .i47-shell [data-section="home"] { --section-accent: var(--realm-lavender); --section-tint: #cbb0f51a; --section-line: #cbb0f566; }
+.i47-shell [data-section="agents"] { --section-accent: var(--realm-blue); --section-tint: #8fc5f51a; --section-line: #8fc5f566; }
+.i47-shell [data-section="dashboards"] { --section-accent: var(--realm-amber); --section-tint: #edc0781a; --section-line: #edc07866; }
+.i47-shell [data-section="armory"] { --section-accent: var(--realm-silver); --section-tint: #c0c7d61a; --section-line: #c0c7d666; }
+.i47-shell [data-section="copilot-47"], .i47-shell[data-dashboard-section="copilot-47"] { --section-accent: var(--realm-magenta); --section-tint: #eaa0cf1a; --section-line: #eaa0cf66; }
+.i47-shell .dash-content { grid-column: 2; }
+.i47-shell .i47-topbar { display: grid; position: relative; gap: 4px; padding: 5px clamp(6px,2vw,22px); background: var(--hud-header); }
+.i47-brand-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.i47-shell .dash-brand { min-width: 0; min-height: 44px; font-size: clamp(14px,2.2vw,20px); letter-spacing: -.01em; gap: 8px; text-align: left; }
+.i47-shell .dash-brand small { font-size: 10px; letter-spacing: .04em; margin: 0; color: var(--guild-muted); }
+.i47-shell .dash-brand-mark { display: grid; place-items: center; width: 34px; height: 34px; color: var(--hud-accent); background: var(--hud-control); }
+.i47-shell .dash-search { flex: 1 1 220px; margin-inline: auto 0; min-width: 0; }
+.i47-status { display: flex; gap: 9px; align-items: center; color: var(--guild-muted); font: 11px var(--guild-mono); white-space: nowrap; }
+.i47-shell .dash-icon-button { min-width: 44px; min-height: 44px; }
+.i47-categories, .i47-context-nav { display: flex; gap: 4px; align-items: center; min-width: 0; overflow-x: auto; }
+.i47-category { display: flex; flex: 0 0 auto; }
+.i47-shell .i47-category .dash-nav-item, .i47-context-nav button { min-height: 44px; min-width: 44px; width: auto; white-space: nowrap; padding: 4px 10px; font: 600 13px var(--guild-font); }
+.i47-shell .i47-category .dash-nav-item { transition-property: background-color, border-color; }
+.i47-shell .i47-category .dash-nav-item.is-active { font-weight: 700; box-shadow: inset 3px 0 var(--nav-accent); }
+.i47-context-nav button { color: var(--guild-muted); }
+.i47-context-nav .dash-badge { margin-left: 6px; }
+.i47-context-nav button[aria-current] { color: var(--section-accent); text-decoration: underline; text-underline-offset: 4px; }
+.i47-shell :focus-visible { outline-color: var(--hud-accent); }
+.i47-shell .dash-surface { border-color: var(--guild-border); }
+.i47-shell:not([data-hud-theme="realm-guild"]) .dash-button:not(.danger):not(.primary) { background: var(--hud-control); border-color: var(--guild-border); color: var(--guild-text); }
+.i47-shell:not([data-hud-theme="realm-guild"]) .dash-button.primary { background: var(--hud-control); border-color: var(--hud-accent); color: var(--guild-text); box-shadow: inset 0 -2px var(--hud-accent); }
+.i47-shell .command-bridge .overview-summary .dash-metric { background: var(--hud-card); }
+.i47-shell .guild-world, .i47-shell .cozy-room { --cozy-border: var(--hud-stage-frame); background: radial-gradient(ellipse at center, var(--hud-stage-light), transparent 65%), var(--hud-stage); }
+.i47-shell .guild-world > .iso-grid, .i47-shell .cozy-room > .iso-grid { background-image: linear-gradient(var(--hud-accent) 1px, transparent 1px), linear-gradient(90deg, var(--hud-accent) 1px, transparent 1px); opacity: .08; }
+.i47-shell .overview-dock-slot { grid-column: 2; }
+.i47-copyright { grid-column: 2; grid-row: 3; color: var(--guild-muted); }
+.has-overview-dock > .i47-copyright { grid-row: 4; }
+.i47-dialog-backdrop { position: fixed; inset: 0; background: #0009; z-index: 115; padding: 12px; display: grid; place-items: center; }
+.i47-dialog { width: min(100%, 510px); max-height: 80dvh; overflow: auto; padding: 16px; border: 1px solid var(--guild-border); }
+.i47-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.i47-hud-form { display: grid; gap: 12px; }
+.i47-hud-form label { display: grid; gap: 4px; }
+.i47-hud-form input:not([type="checkbox"]), .i47-hud-form select { min-height: 44px; width: 100%; padding: 6px 10px; border: 1px solid var(--guild-border); background: var(--hud-control); color: var(--guild-text); }
+.i47-hud-form .i47-checkbox { display: flex; align-items: center; min-height: 44px; gap: 8px; }
+.i47-actions, .i47-home-views { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.i47-home-views { margin: 12px 0; }
+.dash-content > .i47-home-views { padding-inline: clamp(12px,4vw,40px); }
+.has-overview-dock .dash-content > .i47-home-views { margin-block: 3px 0; }
+.has-overview-dock .command-bridge { padding-top: 2px; }
+.has-overview-dock .guild-bridge-intro { margin-bottom: 10px; }
+.has-overview-dock .overview-summary-caption { margin-bottom: 10px; }
+.i47-opening { max-width: 1360px; margin-inline: auto; }
+.i47-hero { display: grid; grid-template-columns: 1fr minmax(90px,30%); align-items: center; gap: 16px; padding: clamp(15px,4vw,42px); border: 1px solid var(--guild-border); border-left: 3px solid var(--hud-accent); background: var(--hud-card); }
+.i47-kicker { display: flex; align-items: center; gap: 7px; font: 12px var(--guild-mono); color: var(--guild-muted); }
+.i47-hero h1 { font-size: clamp(28px,5vw,56px); font-weight: 700; overflow-wrap: anywhere; }
+.i47-hero time { display: block; margin-block: 12px; font: 16px var(--guild-mono); }
+.i47-pulse { color: var(--hud-accent); min-height: 124px; display: grid; place-items: center; border: 1px solid var(--guild-border); opacity: .45; }
+.i47-pulse[data-live="true"] { opacity: 1; }
+[data-hud-grid="true"] .i47-pulse { background-image: linear-gradient(#8299ae33 1px,transparent 1px),linear-gradient(90deg,#8299ae33 1px,transparent 1px); background-size: 14px 14px; }
+.i47-realm-intro { padding: clamp(18px,5vw,60px); border: 1px solid var(--hud-stage-frame); background: radial-gradient(ellipse at 85% 10%, var(--hud-stage-light), transparent 63%), var(--hud-stage); }
+.i47-realm-intro h1 { font-size: clamp(30px,5vw,58px); font-weight: 700; margin-block: 8px; }
+.i47-realm-modes { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(240px,100%),1fr)); gap: 14px; margin-top: 18px; }
+.i47-realm-modes article { display: grid; align-content: start; justify-items: start; gap: 10px; }
+.i47-realm-modes h2 { font-size: 20px; font-weight: 670; }
+.i47-feed { padding: 14px; display: grid; align-content: start; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.i47-feed h2, .i47-dialog h2 { font-size: 20px; font-weight: 675; }
+.i47-feed h3 { font-weight: 650; margin-block: 8px; }
+.i47-feed li + li { margin-top: 6px; }
+.i47-feed ol > li { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; border-top: 1px solid var(--guild-border); padding-top: 6px; }
+.i47-feed ol time { font: 12px var(--guild-mono); }
+@media (max-width: 820px) { .i47-status { margin-left: auto; } .i47-status > span:not(:first-child) { display: none; } }
+@media (max-width: 760px) {
+  .dash-shell.i47-shell { grid-template: auto 56px minmax(0,1fr) auto / minmax(0,1fr); }
+  .dash-shell.i47-shell.has-overview-dock { grid-template-rows: auto 56px minmax(0,1fr) 52px auto; }
+  .i47-shell > .dash-content { grid-area: 3 / 1 / 4 / -1; }
+  .i47-shell > .overview-dock-slot { grid-area: 4 / 1 / 5 / -1; }
+  .i47-shell > .i47-copyright { grid-area: 4 / 1 / 5 / -1; }
+  .i47-shell.has-overview-dock > .i47-copyright { grid-row: 5; }
+}
+@media (max-width: 640px) {
+  .i47-shell .dash-search { display: none; }
+  .i47-hero { grid-template-columns: minmax(0,1fr); }
+  .i47-pulse { min-height: 64px; }
+}
+@media (max-width: 375px) { .i47-status { display: none; } .i47-brand-row .dash-brand { margin-right: auto; } }
+@media (prefers-reduced-motion: no-preference) { .i47-pulse[data-live="true"] > svg { animation: i47-pulse 2s ease-in-out infinite alternate; } }
+@keyframes i47-pulse { to { opacity: .55; } }

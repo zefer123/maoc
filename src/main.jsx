@@ -4,6 +4,8 @@ import App from './App.jsx';
 import './index.css';
 import './components/cc/iso/cozyGuild.css';
 import './components/cc/overview.css';
+import './styles/themeTokens.css';
+import './styles/realmWorkspace.css';
 
 class AppErrorBoundary extends React.Component {
   state = { failed: false };

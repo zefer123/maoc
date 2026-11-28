@@ -39,6 +39,8 @@ Cyber ใช้กับข้อมูลและสถานะ ข้อเ�
 ทำให้สีแยก section เดิมใน `C:/Users/Gamer/OneDrive/เดสก์ท็อป/AI/src/index.css`
 ไม่ปรากฏแบบเดิม นี่คือสาเหตุเชิง CSS ของการรวมสี ไม่ใช่ข้อสรุปว่าทั้งหน้าไม่มีสี
 
+**Intelligent 47 Slice 1:** แสดงปุ่มหมวดปัจจุบันเพียงปุ่มเดียว เมื่อเปิดจะเห็นชื่อหมวดแบบไม่มีเลขนำหน้าและเมนูย่อยที่เลื่อนภายในกรอบได้ เดสก์ท็อปใช้คอลัมน์ซ้ายกว้างคงที่ จอแคบใช้แถบด้านบนและเมนูเลื่อนลงจากปุ่ม เปิด ปิด หรือสลับหมวดแล้วเนื้อหาต้องไม่ขยับ หน้า Home Opening ใช้ตัวอักษรนำ ฉากอากาศแบบ sample และดัชนีลิงก์ที่เลื่อนลงไปได้ ส่วน Parallax Stars แบบสามระยะเป็นพื้นหลังเริ่มต้นร่วมทุกหน้า โดยยังเลือก Cyber-Link, Meteor หรือ Minimal ได้ เมาส์ขยับเฉพาะพื้นหลัง และปุ่มพักหรือ Reduce Motion หยุดเอฟเฟกต์อัตโนมัติ ดูผลตรวจใน [PLAN.md](../PLAN.md#current-state)
+
 ### แรงบันดาลใจไม่ใช่ backlog อัตโนมัติ
 
 The Realm เสนอ 12 realms, MMORPG, persistent world, NPC routines, weather,
@@ -183,7 +185,7 @@ graph ยังใช้สีต่างชุดในบางแผนก �
 | Stage 1 — Blueprint & Knowledge | เอกสารนี้ + curated notes, แยก facts/proposals | ข้อมูลเก่าไม่หาย, อ่านกลับได้ทั้ง JSON/Markdown, แหล่งอ้างอิงไม่ถูกแก้ |
 | Stage 2 — B1.1 Semantic Colors | ผู้ใช้ตรวจรับและอนุมัติ B2 แล้ว; inventory/HEX/precedence อยู่ Section 3 | scoped regressions เดิมคงอยู่ ไม่มีการเปลี่ยนสีแผนก สถานะ หรือปุ่มหลัก |
 | Stage 3 — B2 Analytics | Implemented; แยก mission outcomes, AI-only weighted duration/completion, HUMAN wait, usage coverage และเส้นทางตรงไป Agent/ภารกิจ/AAR; มือถือเป็นบัตรที่ยังมี semantic table | 260 Node/build/69 Chromium/94 layouts ผ่าน; unknown usage ไม่เป็นยอดศูนย์, ไม่มี pooled percentile/time-series/billing/quality score ที่อนุมานขึ้นเอง; รอตรวจรับก่อน B3 |
-| ถัดไป — B3 Mission / Library / Team details | เชื่อมภารกิจ → ผลงาน → ความรู้ → ทีมด้วย ID/ที่มา; ลำดับข้อมูลและสถานะ missing/loading/error | ไม่เปิดรายการอื่นแทน ID ที่หาย; รักษา archives และ keyboard/deep links |
+| B3 ชิ้นแรก — Mission ↔ Deliverable | อนุมัติเฉพาะ fixtures: เชื่อมด้วย ID ตรงกัน แยกกำลังโหลด/อ่านไม่สำเร็จ/ไม่พบ และเปิดผลงานที่เก็บไว้ได้แม้ภารกิจพ้น runtime | ไม่เปิดรายการอื่นแทน ID ที่หาย; รักษา archives และ keyboard/deep links. ส่วนความรู้และทีมยังรออนุมัติ |
 | Functional track แยก | พิจารณา U.5 / U.4 / U.3 ตาม use case และ permission gate เดิม | สเปกและ explicit approval ก่อน implementation ไม่เริ่มเพราะปรับ UI เสร็จ |
 
 **เหตุผลที่ทำ B1.1 ก่อน B2:** แก้จุดที่ผู้ใช้เห็นจริงให้สีมีความหมายก่อน แล้วนำภาษา

@@ -269,7 +269,7 @@ export default function AgentInspectorDrawer({
       (textOverride ?? customDirective).trim() ||
       `สั่งการ ${agent.codename} Co-Work ร่วมกับ ${agent.coWorkPartner}: วิเคราะห์และสรุปรายงานส่งเข้าคลัง`;
 
-    if (!window.confirm('เริ่มภารกิจใหม่สำหรับ Agent นี้? อาจมีค่าใช้จ่าย provider การส่งไม่เพิ่มสิทธิ์ tools หรืออนุมัติรายงาน')) return;
+    if (!window.confirm(`Execution preview · ${agent.codename} + ${agent.coWorkPartner}\n\n${text}\n\nเริ่มภารกิจใหม่? อาจมีค่าใช้จ่าย provider การส่งไม่เพิ่มสิทธิ์ tools หรืออนุมัติรายงาน`)) return;
     const timeStr = new Date().toLocaleTimeString('en-GB');
     const tagTeam = agent.id === 'HERMES' ? 'HERMES' : agent.team.toUpperCase();
     const updatedCmds = addSavedCommand({

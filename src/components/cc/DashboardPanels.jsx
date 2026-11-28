@@ -34,7 +34,7 @@ export function OverviewPanel({ tasks, actionCount, connectionState, deliverable
   const counts = taskCounts(tasks);
   return <div className="dash-page command-bridge">
     <div className="guild-bridge-intro">
-      <div className="guild-bridge-title"><span className="guild-page-seal" aria-hidden="true"><Compass size={27} /></span><div><p className="dash-eyebrow">YOUR GUILD · YOUR NEXT CHAPTER</p><h1>Command bridge<span>ฐานบัญชาการของคุณ</span></h1></div></div>
+      <div className="guild-bridge-title"><span className="guild-page-seal" aria-hidden="true"><Compass size={27} /></span><div><p className="dash-eyebrow">YOUR GUILD · YOUR NEXT CHAPTER</p><h1>Command Deck<span>ฐานบัญชาการของคุณ</span></h1></div></div>
       <div className="guild-bridge-actions"><span className="guild-local-label"><span aria-hidden="true" /> LOCAL WORKSPACE</span><button type="button" className="dash-button" onClick={() => onTeamView('analytics')}>Performance <ArrowRight size={15} /></button></div>
     </div>
     {connectionState !== 'live' && <div role="status" className="dash-callout warning"><ShieldAlert size={19} /><div><strong>ยังไม่เชื่อมต่อ backend</strong><p>ดูข้อมูลที่บันทึกไว้ได้ แต่ยังเริ่มงานหรือส่งคำตอบไม่ได้ ตรวจ backend และการตั้งค่าการเชื่อมต่อก่อน</p></div><button className="dash-button" onClick={onSettings}>Check settings</button></div>}

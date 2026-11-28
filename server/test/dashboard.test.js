@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DASHBOARD_SECTIONS, cleanMission, dashboardNotices, overviewSnapshot, pendingReviews, realDeliverables, taskCounts, taskDepartment } from '../../src/lib/dashboardModel.js';
+import { DASHBOARD_SECTIONS, cleanMission, dashboardNotices, deliverableReadState, missionDeliverables, overviewSnapshot, pendingReviews, realDeliverables, taskCounts, taskDepartment } from '../../src/lib/dashboardModel.js';
 
 test('dashboard has six unique categories; no competing permanent telemetry navigation', () => {
   assert.equal(DASHBOARD_SECTIONS.length, 6);
@@ -36,6 +36,22 @@ test('real artifact projection excludes samples, links canonical task IDs, prese
   const source = { tech: [{ id: 'seed-tech-1' }, { id: 'art-1700000000000' }, { id: 'task-uuid', title: 'Real report' }], empty: null };
   const result = realDeliverables(source); assert.equal(result.length, 1); assert.equal(result[0].deptId, 'tech'); assert.equal(result[0].taskId, 'uuid');
   assert.equal(source.tech.length, 3); assert.equal(source.tech[2].taskId, undefined);
+});
+test('mission deliverables match one exact normalized task ID, never title or conflicting provenance', () => {
+  const items = realDeliverables({ tech: [
+    { id: 'task-one', title: 'Same title' }, { id: 'task-one-extra', title: 'Same title' },
+    { id: 'legacy', task_id: 'one' }, { id: 'explicit', taskId: 'one' },
+    { id: 'conflict', taskId: 'one', task_id: 'two' }, { id: 'unlinked', title: 'Same title' },
+    { id: 'seed-one', taskId: 'one' }
+  ] });
+  assert.deepEqual(missionDeliverables(items, 'one').map(({ id }) => id), ['explicit', 'legacy', 'task-one']);
+  assert.deepEqual(missionDeliverables(items, 'two'), []);
+  assert.equal(items.find(({ id }) => id === 'conflict').taskId, null);
+});
+test('only resolved deliverable sync can confirm absence', () => {
+  assert.equal(deliverableReadState('pending'), 'loading');
+  for (const status of ['conflict', 'invalid', 'offline']) assert.equal(deliverableReadState(status), 'unavailable');
+  for (const status of ['ready', 'hydrated', 'synced', 'projection-degraded']) assert.equal(deliverableReadState(status), 'ready');
 });
 test('reviews are deduplicated and resolved approvals never remain actions', () => {
   const interrupt = { event_type: 'HITL_INTERRUPT', approval_id: 'one', task_id: 'task' };

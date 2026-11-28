@@ -10,6 +10,7 @@ import { LlmEngine } from './llmEngine.js';
 import { ToolExecutor } from './toolExecutor.js';
 import { TaskScheduler } from './taskScheduler.js';
 import { TaskTemplateStore } from './taskTemplateStore.js';
+import { HudPreferencesStore } from './hudPreferencesStore.js';
 import { PerformanceStore } from './performanceStore.js';
 import { MissionHistory } from './missionHistory.js';
 import { AccessKeys, validateAdminKey } from './accessKeys.js';
@@ -45,10 +46,14 @@ export async function createApplication(options = {}) {
   const analytics = new PerformanceStore(storage, { clock: options.analyticsClock });
   const history = new MissionHistory(storage);
   const access = new AccessKeys(storage, settings);
+  const hudPreferences = new HudPreferencesStore(storage, (revision) => {
+    for (const socket of wss.clients) send(socket, { type: 'HUD_PREFERENCES_UPDATED', revision });
+  });
   const orchestrator = options.orchestrator || new Orchestrator({ llmEngine, toolExecutor, storage, analytics, history, clock: options.analyticsClock });
   let scheduler;
   let templates;
   try {
+    await hudPreferences.init();
     await access.init();
     await history.init();
     await analytics.init();
@@ -183,6 +188,8 @@ export async function createApplication(options = {}) {
   }));
 
   app.get('/api/llm/config', (req, res) => res.json(llmEngine.inspect()));
+  app.get('/api/hud-preferences', (_req, res) => res.json(hudPreferences.get()));
+  app.put('/api/hud-preferences', asyncRoute(async (req, res) => res.json(await hudPreferences.put(req.body))));
   app.put('/api/llm/config', (req, res, next) => {
     if (req.access.role === 'user') return next(new HttpError(403, 'Admin access is required to change the shared AI provider'));
     try { res.json(llmEngine.configure(req.body)); } catch (error) { next(error); }
@@ -322,7 +329,7 @@ export async function createApplication(options = {}) {
     socket.on('error', (error) => logger.warn('websocket.error', { error }));
     const attach = (principal) => {
       socket.access = principal;
-      send(socket, { type: 'SNAPSHOT', collection_realtime: collectionRealtime, tasks: orchestrator.listTasks(), events: telemetryBus.snapshot(50), human_inputs: orchestrator.listHumanInputs(), schedules: scheduler.list() });
+      send(socket, { type: 'SNAPSHOT', storage_driver: driver, collection_realtime: collectionRealtime, tasks: orchestrator.listTasks(), events: telemetryBus.snapshot(50), human_inputs: orchestrator.listHumanInputs(), pending_approvals: orchestrator.listPendingApprovals(), schedules: scheduler.list() });
       socket.once('close', telemetryBus.subscribe((event) => send(socket, { type: 'EVENT', event })));
     };
     if (auth) attach(auth);
@@ -411,6 +418,7 @@ export async function createApplication(options = {}) {
         if (failures.length) throw new AggregateError(failures.map(({ reason }) => reason), 'Shutdown drain failed');
         await analytics.close();
         await access.queue;
+        await hudPreferences.close();
         await storage.close();
         logger.info('server.shutdown_completed');
       } finally { clearTimeout(force); }

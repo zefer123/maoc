@@ -24,6 +24,8 @@ const rootErrorMarker = 'MAOC_ROOT_RENDER_FIXTURE';
 const fixtureAdmin = accessOnly ? 'fixture_only_admin_not_a_real_secret_2026' : '';
 const screenshotPath = (name) => join(navigationEvidence || join(root, 'server'), name);
 const checks = []; const errors = []; const layouts = [];
+const coreMenuLayout = `(() => {const m=document.querySelector('.i47-core-menu'),r=m.getBoundingClientRect(),rail=m.closest('nav').getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,scroll:m.scrollWidth,client:m.clientWidth,railLeft:rail.left,railRight:rail.right,railBottom:rail.bottom,documentWidth:document.documentElement.scrollWidth,viewport:innerWidth};})()`;
+const workspaceLayout = `(() => {const box=selector=>document.querySelector(selector)?.getBoundingClientRect().toJSON() ?? null;return {main:box('.dash-content'),hero:box('#i47-home-title'),canvas:box('.i47-viewport canvas'),rail:box('.i47-core-bar'),dock:box('.overview-dock-slot'),status:box('.i47-web-status'),scroll:document.querySelector('.dash-content').scrollTop};})()`;
 const expectedChunkErrors = []; let expectedChunkFailure = '';
 let app, vite, chrome, socket;
 
@@ -111,7 +113,30 @@ try {
   const evaluate = async (expression) => { const result = await cdp('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text); return result.result.value; };
   const wait = async (expression, evaluateIn = evaluate) => { for (let i = 0; i < 240; i += 1) { try { if (await evaluateIn(`Boolean(${expression})`)) return; } catch (reason) { if (!/context|navigated|Cannot read properties of null/i.test(reason.message)) throw reason; } await delay(50); } throw new Error(`Timed out: ${expression}`); };
   const click = async (text, selector = 'button') => { const found = await evaluate(`(() => {const b=[...document.querySelectorAll(${JSON.stringify(selector)})].find(b=>b.getClientRects().length && b.textContent.trim()===${JSON.stringify(text)}); if(!b || b.disabled)return false;b.click();return true;})()`); assert.ok(found, `Visible enabled control: ${text}`); await delay(40); };
-  const nav = async (section) => { const found = await evaluate(`(() => {const b=[...document.querySelectorAll('nav button')].find(b=>b.getClientRects().length && b.textContent.replace(/\\d+/g,'').trim()===${JSON.stringify(section)});if(!b)return false;b.click();return true;})()`); assert.ok(found, `Navigation ${section}`); await delay(40); };
+  const coreTrigger = '#i47-core-trigger';
+  const currentCoreLabel = `document.querySelector('${coreTrigger} > span').textContent`;
+  const openCore = async () => {
+    await evaluate(`(() => {const b=document.querySelector('${coreTrigger}');if(b.getAttribute('aria-expanded')!=='true') b.click()})()`);
+    await wait(`!document.getElementById('i47-core-menu').hidden`);
+  };
+  const chooseCorePage = async (core, page) => {
+    const id = { Home: 'home', Dashboards: 'dashboards', Agents: 'agents', Armory: 'armory', 'Copilot 47': 'copilot-47' }[core];
+    await openCore();
+    await evaluate(`(() => {const b=document.getElementById('i47-heading-${id}');if(b.getAttribute('aria-expanded')!=='true') b.click()})()`);
+    const list = `#i47-core-${id}`;
+    await wait(`document.querySelector('${list}').getClientRects().length===1`);
+    const found = await evaluate(`(() => {const b=[...document.querySelectorAll(${JSON.stringify(`${list} button`)})].find(b=>b.getClientRects().length&&b.dataset.navView===${JSON.stringify(page)});if(!b)return false;b.click();return true;})()`);
+    assert.ok(found, `Visible owned page ${core} / ${page}`); await delay(40);
+  };
+  const nav = async (section) => {
+    if (section === 'Overview') {
+      await chooseCorePage('Home', 'Command Deck');
+      await wait(`document.querySelector('.guild-world')`);
+      return;
+    }
+    const category = { Missions: 'Dashboards', Library: 'Dashboards', Activity: 'Dashboards', Analytics: 'Dashboards', Teams: 'Agents', Settings: 'Armory' }[section] || section;
+    await chooseCorePage(category, { Home: 'Home Opening', Teams: 'Department roster' }[section] || section);
+  };
   // A live element from the outgoing document is not reload completion.
   const reload = async () => {
     const previousOrigin = await evaluate('performance.timeOrigin');
@@ -125,6 +150,25 @@ try {
     await evaluate(`document.getElementById('builder-steps-'+${JSON.stringify(id)}).click()`);
   };
   const key = async (key, code = key, virtual = 9) => { await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: virtual, ...(key === 'Enter' ? { text: '\r' } : {}) }); await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: virtual }); };
+  async function physicalClick(selector) {
+    const measure = () => evaluate(`(() => {const e=document.querySelector(${JSON.stringify(selector)});e.scrollIntoView({block:'nearest'});const b=e.getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2,hit:e.contains(document.elementFromPoint(b.x+b.width/2,b.y+b.height/2))};})()`);
+    const initial = await measure();
+    await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: initial.x, y: initial.y });
+    // Hover transforms and scroll/fit transitions must settle before choosing a click point.
+    await delay(200);
+    let point = await measure(); let stable = 0;
+    for (let sample = 0; sample < 20 && stable < 3; sample += 1) {
+      await delay(100);
+      const next = await measure();
+      stable = next.hit && Math.abs(next.x-point.x)<.5 && Math.abs(next.y-point.y)<.5 ? stable+1 : 0;
+      point = next;
+    }
+    assert.equal(stable, 3, `Pointer target settles before click: ${selector}`);
+    assert.ok(point.hit, `Hit target is not covered: ${selector}`);
+    await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 });
+    await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 });
+    await delay(60);
+  }
   const drain = async () => { for (let i = 0; i < 400 && app.orchestrator.running.size; i += 1) await delay(20); assert.equal(app.orchestrator.running.size, 0); };
   const tasks = () => [...app.orchestrator.tasks.values()];
   const waitForDispatchedTask = async (previousCount, label) => {
@@ -139,11 +183,14 @@ try {
   socket.on('message', (raw) => { if (JSON.parse(raw).method === 'Page.javascriptDialogOpening') void cdp('Page.handleJavaScriptDialog', { accept: acceptDialogs }); });
   const heldChunks = new Map();
   let holdChunk = '';
+  let holdDeliverableRead = false;
+  let deliverableRead;
   socket.on('message', (raw) => {
     const message = JSON.parse(raw);
     if (message.method !== 'Fetch.requestPaused') return;
     const { requestId, request } = message.params;
-    if (holdChunk && request.url.includes(holdChunk)) heldChunks.set(requestId, request.url);
+    if (holdDeliverableRead && request.method === 'GET' && new URL(request.url).pathname === '/api/storage/deliverables' && !deliverableRead) deliverableRead = requestId;
+    else if (holdChunk && request.url.includes(holdChunk)) heldChunks.set(requestId, request.url);
     else void cdp('Fetch.continueRequest', { requestId });
   });
   const releaseChunks = async () => { holdChunk = ''; for (const requestId of heldChunks.keys()) await cdp('Fetch.continueRequest', { requestId }); heldChunks.clear(); };
@@ -155,8 +202,9 @@ try {
     for (let i = 0; i < 240 && !intercepted(); i += 1) await delay(50);
     assert.ok(intercepted(), `DevTools must intercept the lazy request for ${chunk}`);
   };
-  await cdp('Fetch.enable', { patterns: [{ urlPattern: '*TradeFloorRoom*' }, { urlPattern: '*TopologyTreeView*' }, { urlPattern: '*PerformanceDashboard*' }, { urlPattern: '*AfterActionReview*' }, { urlPattern: '*WorkflowBuilderModal*' }] });
+  await cdp('Fetch.enable', { patterns: [{ urlPattern: '*TradeFloorRoom*' }, { urlPattern: '*TopologyTreeView*' }, { urlPattern: '*PerformanceDashboard*' }, { urlPattern: '*AfterActionReview*' }, { urlPattern: '*WorkflowBuilderModal*' }, { urlPattern: '*/api/storage/deliverables' }] });
   await cdp('Runtime.enable'); await cdp('Page.enable');
+  await cdp('Emulation.setFocusEmulationEnabled', { enabled: true });
   await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('maoc_llm_engine_config_v1',JSON.stringify({provider:'openai',apiKey:'offline-browser-transport',modelName:'offline',autoFailover:false,rpm:1000,maxTaskTokens:500000}));` });
   if (pollingOnly) await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `{
     const schedule = window.setTimeout.bind(window);
@@ -205,31 +253,40 @@ try {
   else if (pollingOnly) await checkPollingOnly();
   else if (process.argv.includes('--collection-sync-only')) await checkCollectionSync();
   else if (process.argv.includes('--ceo-directive-only')) await checkCeoDirective();
+  else if (process.argv.includes('--hud-only')) await checkHudWorkspace();
+  else if (process.argv.includes('--attention-only')) await checkWorkspaceAttention();
   else {
-  assert.deepEqual(await evaluate(`performance.getEntriesByType('resource').filter(e=>/TradeFloorRoom|TopologyTreeView|PerformanceDashboard|AfterActionReview|WorkflowBuilderModal/.test(e.name)).map(e=>e.name)`), []);
-  checks.push('Initial Overview keeps the eager map without requesting room, topology, analytics, AAR or Builder modules');
+  assert.equal(await evaluate(`document.title`), 'Intelligent 47 (Forty-Seven)');
+  assert.equal(await evaluate(`document.querySelector('.dash-shell').dataset.hudTheme`), 'kali-cyber');
+  assert.ok(await evaluate(`!location.hash && document.querySelectorAll('.i47-feed-trigger[aria-expanded="false"]').length===2 && !document.querySelector('.i47-hud-popup')`));
+  assert.deepEqual(await evaluate(`performance.getEntriesByType('resource').filter(e=>/IsometricMap|TradeFloorRoom|TopologyTreeView|PerformanceDashboard|AfterActionReview|WorkflowBuilderModal|three\.js/.test(e.name)).map(e=>e.name)`), []);
+  checks.push('Root opens Home Opening without requesting map, room, topology, analytics, AAR, Builder or Three.js');
+  await checkHudWorkspace();
+  await nav('Overview');
   assert.equal(await evaluate(`document.querySelectorAll('.dash-metric strong').length`), 4);
   assert.deepEqual(await evaluate(`[...document.querySelectorAll('.dash-metric strong')].map(e=>e.textContent)`), ['0', '0', '0', '0']);
-  assert.equal(await evaluate(`!!document.querySelector('aside nav') && !document.querySelector('.dash-sidebar textarea')`), true);
-  checks.push('Overview starts with honest scoped zero counts; sidebar is navigation-only, no permanent telemetry');
+  assert.equal(await evaluate(`!!document.querySelector('nav[aria-label="Workspace pages"]') && !document.querySelector('.i47-categories textarea')`), true);
+  checks.push('Command Deck starts with honest scoped zero counts; workspace tabs are navigation-only');
   assert.equal(await evaluate(`[...document.querySelectorAll('.overview-summary .dash-metric')].every(e=>e.getBoundingClientRect().height>=120)`), true, 'Overview summary uses readable situation cards, not a compressed toolbar');
-  assert.equal(await evaluate(`document.querySelector('.bridge-realm').getBoundingClientRect().top<430`), true, 'Guild scene and mission board remain in the first desktop viewport');
+  const deckTop = await evaluate(`document.querySelector('.bridge-realm').getBoundingClientRect().top`);
+  assert.ok(deckTop < 430, `Guild scene and mission board remain in the first desktop viewport: ${deckTop}`);
   assert.equal(await evaluate(`document.querySelector('.guild-mission-board').getBoundingClientRect().top===document.querySelector('.bridge-realm').getBoundingClientRect().top`), true);
-  assert.equal(await evaluate(`document.querySelectorAll('.guild-nav-group').length`), 2);
-  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.dash-sidebar .dash-nav-item')).fontFamily===getComputedStyle(document.querySelector('.dash-metric strong')).fontFamily`), false);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.i47-categories .dash-nav-item')].map(e=>e.textContent.trim())`), ['Home', 'Dashboards', 'Agents', 'Armory', 'Copilot 47']);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.i47-categories .dash-nav-item')).fontFamily===getComputedStyle(document.querySelector('.dash-metric strong')).fontFamily`), false);
   assert.equal(await evaluate(`!!document.querySelector('.overview-dock') && !document.querySelector('.overview-dock-panel')`), true);
-  assert.equal(await evaluate(`new Set([...document.querySelectorAll('.dash-sidebar .dash-nav-item > svg')].map(e=>getComputedStyle(e).color)).size`), 6, 'All six navigation destinations retain their own Realm color, including the active destination');
-  const realmColors = { overview: 'rgb(203, 176, 245)', missions: 'rgb(237, 192, 120)', teams: 'rgb(143, 197, 245)', library: 'rgb(168, 211, 160)', activity: 'rgb(234, 160, 207)', settings: 'rgb(192, 199, 214)' };
-  for (const [section, expected] of Object.entries(realmColors)) {
-    await nav({ overview: 'Overview', missions: 'Missions', teams: 'Teams', library: 'Library', activity: 'Activity', settings: 'Settings' }[section]);
-    await wait(`document.querySelector('.dash-shell').dataset.dashboardSection===${JSON.stringify(section)} && getComputedStyle(document.querySelector('.guild-location strong')).color===${JSON.stringify(expected)}`);
-    assert.equal(await evaluate(`document.querySelector('.dash-shell').dataset.dashboardSection`), section);
-    const actual = await evaluate(`(() => {const e=document.querySelector('.dash-sidebar .dash-nav-item.is-active'),s=getComputedStyle(e);return {color:s.color,icon:getComputedStyle(e.querySelector('svg')).color,current:e.getAttribute('aria-current'),weight:Number(s.fontWeight),marker:s.boxShadow,location:getComputedStyle(document.querySelector('.guild-location strong')).color};})()`);
-    assert.equal(actual.color, expected); assert.equal(actual.icon, expected); assert.equal(actual.location, expected);
-    assert.equal(actual.current, 'page'); assert.ok(actual.weight >= 600); assert.ok(actual.marker.includes(expected));
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.overview-dock-counts > span')].map(e=>e.textContent)`), ['Running 0', 'Needs You 0']);
+  assert.equal(await evaluate(`new Set([...document.querySelectorAll('.i47-categories .dash-nav-item > svg')].map(e=>getComputedStyle(e).color)).size`), 5);
+  const realmColors = { Home: 'rgb(203, 176, 245)', Agents: 'rgb(143, 197, 245)', Dashboards: 'rgb(237, 192, 120)', Armory: 'rgb(192, 199, 214)', 'Copilot 47': 'rgb(234, 160, 207)' };
+  for (const [label, expected] of Object.entries(realmColors)) {
+    await nav(label);
+    assert.equal(await evaluate(currentCoreLabel), label);
+    assert.equal(await evaluate(`document.getElementById('i47-core-menu').hidden`), true);
+    const actual = await evaluate(`(() => {const e=document.querySelector('.i47-categories .dash-nav-item.is-active'),s=getComputedStyle(e);return {color:s.color,icon:getComputedStyle(e.querySelector('svg')).color,current:e.getAttribute('aria-current'),weight:Number(s.fontWeight),marker:s.boxShadow};})()`);
+    assert.equal(actual.color, expected); assert.equal(actual.icon, expected);
+    assert.equal(actual.current, 'true'); assert.ok(actual.weight >= 600); assert.ok(actual.marker.includes(expected));
   }
   await nav('Overview');
-  checks.push('Six Realm menu identities survive route selection and header context; active state has aria-current, heavier text and a non-color-only inset marker');
+  checks.push('Five workspace categories retain distinct accents, aria-current, heavier text and a non-color-only inset marker');
   await evaluate(`document.getElementById('overview-status-trigger').focus()`);
   await cdp('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' });
   await cdp('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
@@ -244,13 +301,14 @@ try {
   assert.equal(await evaluate(`document.activeElement.id`), 'dashboard-notices-trigger');
   for (const section of ['Overview', 'Missions', 'Teams', 'Library', 'Activity', 'Settings']) {
     await nav(section);
-    const shell = await evaluate(`(() => {const b=document.getElementById('dashboard-notices-trigger');return {bells:document.querySelectorAll('.dash-shell .lucide-bell').length,label:b.getAttribute('aria-label'),expanded:b.getAttribute('aria-expanded'),current:document.querySelector('.dash-sidebar [aria-current="page"]').textContent.trim(),status:document.querySelectorAll('.overview-dock > button').length};})()`);
-    assert.deepEqual(shell, { bells: 1, label: 'Notices, 0 unread', expanded: 'false', current: section, status: section === 'Overview' ? 1 : 0 });
+    const current = { Overview: 'Home', Missions: 'Dashboards', Teams: 'Agents', Library: 'Dashboards', Activity: 'Dashboards', Settings: 'Armory' }[section];
+    const shell = await evaluate(`(() => {const b=document.getElementById('dashboard-notices-trigger');return {bells:document.querySelectorAll('.dash-shell .lucide-bell').length,label:b.getAttribute('aria-label'),expanded:b.getAttribute('aria-expanded'),current:${currentCoreLabel},status:document.querySelectorAll('.overview-dock > button').length};})()`);
+    assert.deepEqual(shell, { bells: 1, label: 'Notices, 0 unread', expanded: 'false', current, status: section === 'Overview' ? 1 : 0 });
     await evaluate(`document.getElementById('dashboard-notices-trigger').focus()`);
     await key('Enter', 'Enter', 13);
     await wait(`document.getElementById('overview-notices-panel')`);
     assert.equal(await evaluate(`document.activeElement.id`), 'overview-dock-heading');
-    assert.equal(await evaluate(`document.querySelector('.dash-sidebar [aria-current="page"]').textContent.trim()`), section, 'Bell previews without navigating');
+    assert.equal(await evaluate(currentCoreLabel), current, 'Bell previews without navigating');
     await evaluate(`document.querySelector('[aria-label="Close notices"]').click()`);
     assert.equal(await evaluate(`document.activeElement.id`), 'dashboard-notices-trigger');
   }
@@ -277,7 +335,7 @@ try {
   await nav('Overview');
   checks.push('Overview situation cards open exact Running/Completed/Failed mission filters and keyboard Needs You opens Action inbox without dispatch');
   holdChunk = 'PerformanceDashboard';
-  await nav('Teams'); await click('Analytics');
+  await nav('Analytics');
   await wait(`document.querySelector('[data-lazy-state="loading"]')`); await waitForHeldChunk();
   await releaseChunks(); holdChunk = 'AfterActionReview';
   await wait(`document.querySelector('[aria-labelledby="analytics-title"]').textContent.includes('ยังไม่มีข้อมูลที่ตรงตัวกรอง')`);
@@ -289,16 +347,18 @@ try {
   assert.equal(tasks().length, 0); assert.equal((await api('/analytics')).mission_count, 0);
   checks.push('Analytics starts with 28 honest empty rows, null rates/latency, no demo metrics or provider dispatch');
   await wait(`document.getElementById('aar-history-title') && document.querySelector('[aria-labelledby="aar-history-title"]').textContent.includes('ยังไม่มี AAR ที่ตรงตัวกรอง')`);
-  await evaluate(`document.querySelector('.dash-sidebar [data-nav-view="Guild map"]').focus()`); await key('Enter', 'Enter', 13);
+  await nav('Teams'); await openCore(); await evaluate(`document.querySelector('.i47-context-nav [data-nav-view="Guild map"]').focus()`); await key('Enter', 'Enter', 13);
   await wait(`location.hash==='#/teams?view=realm' && document.querySelectorAll('.guild-island').length===8`);
-  assert.equal(await evaluate(`document.querySelector('.guild-location strong').textContent`), 'Guild map');
-  assert.equal(await evaluate(`document.querySelector('.dash-sidebar .guild-subnav [aria-current="page"]').textContent`), 'Guild map');
+  assert.equal(await evaluate(`document.querySelector('[data-current-location]').textContent`), 'Guild map');
+  await openCore();
+  assert.equal(await evaluate(`document.querySelector('#i47-core-agents [aria-current="location"]').textContent`), 'Guild map');
+  await key('Escape', 'Escape', 27);
   await cdp('Page.navigate', { url: `${url}/#/teams?view=analytics` });
   await wait(`document.querySelector('[aria-labelledby="analytics-title"]') && document.querySelector('.dash-connection.is-live')`);
-  assert.equal(await evaluate(`document.querySelector('.guild-location strong').textContent`), 'Performance analytics');
+  assert.equal(await evaluate(`document.querySelector('[data-current-location]').textContent`), 'Analytics');
   assert.equal(tasks().length, 0);
   checks.push('Contextual sidebar destinations support Enter, exact deep links and route-aware current location without dispatch');
-  await click('รายชื่อทีม');
+  await nav('Teams');
   const navigationTaskCount = tasks().length;
   await evaluate(`document.querySelector('[data-team-open="tech"]').click()`);
   await wait(`document.querySelector('[data-team-workspace="tech"]')`);
@@ -351,6 +411,7 @@ try {
   assert.notEqual(await evaluate(`getComputedStyle(document.querySelector('.signal-sweep')).strokeDashoffset`), scanOffset, 'Decorative graph scan advances without random data');
   await evaluate(`document.querySelector('[aria-label="พักเอฟเฟกต์แผนที่"]').click()`);
   assert.equal(await evaluate(`getComputedStyle(document.querySelector('.guild-astral-mist')).animationPlayState`), 'paused');
+  await evaluate(`Promise.all(document.querySelector('.guild-world').getAnimations({subtree:true}).filter(a=>a.playState==='paused').map(a=>a.ready))`);
   const pausedMist = await evaluate(`getComputedStyle(document.querySelector('.guild-astral-mist')).transform`);
   const pausedOffset = await evaluate(`getComputedStyle(document.querySelector('.guild-link-packet')).strokeDashoffset`);
   await delay(200);
@@ -362,11 +423,8 @@ try {
   await wait(`document.querySelector('[role="dialog"][aria-label^="Agent"]')`);
   assert.equal(await evaluate(`document.querySelector('.overview-dock')===null`), true, 'Agent inspector suspends the dock');
   await key('Escape', 'Escape', 27);
-  await evaluate(`document.querySelector('[aria-label="เข้าห้อง TECH SYSTEMS"]').scrollIntoView({block:'center'})`);
-  const entrance = await evaluate(`(() => {const b=document.querySelector('[aria-label="เข้าห้อง TECH SYSTEMS"]').getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2};})()`);
   holdChunk = 'TradeFloorRoom';
-  await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', ...entrance, button: 'left', clickCount: 1 });
-  await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', ...entrance, button: 'left', clickCount: 1 });
+  await physicalClick('[aria-label="เข้าห้อง TECH SYSTEMS"]');
   await wait(`document.querySelector('[data-lazy-state="loading"]')`);
   await waitForHeldChunk();
   const roomLoadingHeight = await evaluate(`document.querySelector('.dash-spatial-host').getBoundingClientRect().height`);
@@ -380,25 +438,6 @@ try {
   assert.equal(await evaluate(`new Set([...document.querySelectorAll('[data-building]')].map(e=>e.dataset.building)).size`), 8);
   assert.equal(await evaluate(`[...document.querySelectorAll('.guild-props,.guild-ground')].every(e=>getComputedStyle(e).pointerEvents==='none' && e.getAttribute('aria-hidden')==='true')`), true);
   assert.equal(await evaluate(`document.querySelectorAll('.pixel-agent.is-working').length`), 0, 'Recent events never fabricate a working pose');
-  const physicalClick = async (selector) => {
-    const measure = () => evaluate(`(() => {const e=document.querySelector(${JSON.stringify(selector)});e.scrollIntoView({block:'nearest'});const b=e.getBoundingClientRect();return {x:b.x+b.width/2,y:b.y+b.height/2,hit:e.contains(document.elementFromPoint(b.x+b.width/2,b.y+b.height/2))};})()`);
-    const initial = await measure();
-    await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: initial.x, y: initial.y });
-    // Hover transforms and scroll/fit transitions must settle before choosing a click point.
-    await delay(200);
-    let point = await measure(); let stable = 0;
-    for (let sample = 0; sample < 20 && stable < 3; sample += 1) {
-      await delay(100);
-      const next = await measure();
-      stable = next.hit && Math.abs(next.x-point.x)<.5 && Math.abs(next.y-point.y)<.5 ? stable+1 : 0;
-      point = next;
-    }
-    assert.equal(stable, 3, `Pointer target settles before click: ${selector}`);
-    assert.ok(point.hit, `Hit target is not covered: ${selector}`);
-    await cdp('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 });
-    await cdp('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 });
-    await delay(60);
-  };
   await physicalClick('[aria-label="ขยายแผนที่"]');
   await physicalClick('[aria-label="จัดแผนที่ให้พอดี"]');
   await evaluate(`document.querySelector('.guild-entrance').focus()`);
@@ -543,6 +582,7 @@ try {
   await evaluate(`document.getElementById('overview-status-trigger').click()`);
   await wait(`document.getElementById('overview-status-panel')`);
   assert.equal(await evaluate(`document.querySelector('.overview-status-counts > button:nth-child(2) strong').textContent`), '1');
+  assert.equal(await evaluate(`document.querySelector('.overview-dock-counts > span:nth-child(2)').textContent`), 'Needs You 1');
   // Reload earlier in the scenario resets the bounded client event window. Seed
   // six local notices explicitly so latest-five coverage never depends on history.
   const previewTaskId = tasks().find(({ state }) => state === 'COMPLETED').id;
@@ -575,7 +615,7 @@ try {
     await wait(`document.querySelector('.overview-notice-list')`);
     assert.equal(await evaluate(`document.querySelector('[data-notice-id="${dockNoticeId}"]').dataset.read`), 'true');
     assert.equal(Number(await evaluate(`document.getElementById('dashboard-notices-trigger').getAttribute('aria-label').split(', ')[1].split(' ')[0]`)), unreadBeforeDockRead - 1);
-    assert.equal(await evaluate(`document.querySelector('.dash-sidebar [data-section="activity"] .dash-badge').textContent`), '1');
+    assert.match(await evaluate(`document.querySelector('.i47-status').textContent`), /GATES 1/);
     await key('Escape', 'Escape', 27);
     assert.equal(await evaluate(`document.activeElement.id`), 'dashboard-notices-trigger');
   }
@@ -593,11 +633,13 @@ try {
   assert.ok(dockMissionId);
   const noticeTaskId = telemetryBus.snapshot(500).find(({ event_id }) => event_id === dockMissionId)?.task_id;
   assert.ok(noticeTaskId);
-  await evaluate(`document.querySelector('.overview-notice-list > li button:not([aria-label])').click()`);
-  await wait(`document.querySelector('[role="main"]').textContent.includes('Task ID:')`);
-  assert.equal(await evaluate(`document.querySelector('[role="main"]').textContent.includes(${JSON.stringify(noticeTaskId)})`), true);
-  assert.equal(await evaluate(`document.getElementById('overview-notices-panel')===null`), true);
-  assert.equal(await evaluate(`document.querySelector('.overview-dock')===null`), true);
+  await evaluate(`document.querySelector('.overview-notice-list > li button:not([aria-label])').focus();document.activeElement.click()`);
+  await wait(`document.querySelector('.i47-action-overlay[open]')`);
+  if (await evaluate(`document.getElementById('i47-overlay-title').textContent==='Notification details'`)) await click('View mission details', '.i47-action-overlay button');
+  await wait(`document.querySelector('.i47-action-overlay').textContent.includes('Task ID: '+${JSON.stringify(noticeTaskId)})`);
+  assert.ok(await evaluate(`document.querySelector('[data-current-location]').textContent==='Command Deck' && !!document.getElementById('overview-notices-panel') && !!document.querySelector('.overview-dock')`));
+  await key('Escape', 'Escape', 27);
+  await wait(`!document.querySelector('.i47-action-overlay') && document.activeElement.closest('.overview-notice-list')`);
   await nav('Overview'); await evaluate(`document.getElementById('overview-status-trigger').click()`);
   await evaluate(`document.querySelector('.overview-status-counts > button:nth-child(2)').click()`);
   await wait(`document.getElementById('activity-tabs-actions').getAttribute('aria-selected')==='true'`);
@@ -615,9 +657,9 @@ try {
   await nav('Overview');
   assert.equal(await evaluate(`document.getElementById('dashboard-notices-trigger').getAttribute('aria-label')`), 'Notices, 0 unread', 'Activity read-all updates the Bell, without resolving a report');
   assert.equal(await evaluate(`document.querySelector('#dashboard-notices-trigger .dash-notification-dot')===null`), true, 'Pending review is not an unread notice');
-  assert.equal(await evaluate(`document.querySelector('.dash-sidebar [data-section="activity"] .dash-badge').textContent`), '1');
+  assert.match(await evaluate(`document.querySelector('.i47-status').textContent`), /GATES 1/);
   await nav('Activity'); await evaluate(`document.getElementById('activity-tabs-actions').click()`);
-  checks.push('Dock Open mission and Status shortcuts reach canonical mission/actions/active filter; Settings suspends dock; Activity read-all clears shared unread without approval');
+  checks.push('Dock opens exact mission in place; Status shortcuts reach canonical actions/active filter; Settings suspends dock; Activity read-all clears shared unread without approval');
   await click('อนุมัติรายงาน'); await drain(); assert.equal(app.orchestrator.tasks.get(review.task_id).state, 'COMPLETED');
   const rejected = await api('/tasks', { description: '[TEAM:TECH] DASHBOARD_REJECT', workflow: { nodes: [{ id: 'review', agent: 'SAGE', dependsOn: [] }] } });
   await wait(`!![...document.querySelectorAll('button')].find(e=>e.getClientRects().length && e.textContent==='ปฏิเสธ / หยุดงาน')`); await click('ปฏิเสธ / หยุดงาน'); await drain(); assert.equal(app.orchestrator.tasks.get(rejected.task_id).state, 'FAILED');
@@ -631,12 +673,16 @@ try {
   await nav('Missions'); await click('Create mission'); await step('goal'); await input('Mission', '[TEAM:TECH] DASHBOARD_SCHEDULE'); await step('method'); await select('Execution mode', 'sequential'); await step('timing'); await select('Dispatch timing', 'recurring');
   await select('Recurrence', 'daily'); await select('Recurrence', 'weekly'); await select('Recurrence', 'interval'); await input('Schedule name', 'Dashboard schedule'); const beforeSchedule = tasks().length;
   await step('review'); await click('Save paused schedule'); await wait(`document.querySelector('[aria-labelledby="schedules-title"]')`);
-  assert.equal(app.scheduler.list()[0].state, 'PAUSED'); assert.equal(tasks().length, beforeSchedule); await click('Resume schedule'); await wait(`document.querySelector('[aria-label="Saved mission schedules"]').textContent.includes('ENABLED')`);
+  assert.equal(app.scheduler.list()[0].state, 'PAUSED'); assert.equal(tasks().length, beforeSchedule);
+  await wait(`[...document.querySelectorAll('[aria-label="Saved mission schedules"] button')].some(b=>b.textContent==='Resume schedule' && !b.disabled)`);
+  await click('Resume schedule'); await wait(`document.querySelector('[aria-label="Saved mission schedules"]').textContent.includes('ENABLED')`);
   now += 3600001; await app.scheduler.tick(); await drain(); await app.scheduler.tick(); await click('Refresh schedules');
   await wait(`!![...document.querySelectorAll('button')].find(e=>e.textContent==='เปิดภารกิจ / ผลงาน')`); await click('เปิดภารกิจ / ผลงาน');
   await wait(`document.querySelector('[role="main"]').textContent.includes('DASHBOARD_SCHEDULE')`); assert.equal(tasks().at(-1).scheduledRun.run, 1);
   checks.push('Recurring UI supports interval/daily/weekly, saves paused, requires Resume and links latest scheduled run to mission');
-  await nav('Missions'); await click('กลับไปภารกิจ'); await click('Schedulesตั้งเวลาซ้ำ · เริ่ม paused เสมอ'); await click('Pause schedule'); await wait(`document.querySelector('[aria-label="Saved mission schedules"]').textContent.includes('PAUSED')`); await click('Delete schedule'); await wait(`document.querySelector('[aria-label="Saved mission schedules"]').children.length===0`); await click('Close');
+  await click('กลับไปภารกิจ'); await wait(`location.hash==='#/missions'`); await click('Schedulesตั้งเวลาซ้ำ · เริ่ม paused เสมอ');
+  await wait(`[...document.querySelectorAll('[aria-label="Saved mission schedules"] button')].some(b=>b.textContent==='Pause schedule' && !b.disabled)`);
+  await click('Pause schedule'); await wait(`document.querySelector('[aria-label="Saved mission schedules"]').textContent.includes('PAUSED')`); await click('Delete schedule'); await wait(`document.querySelector('[aria-label="Saved mission schedules"]').children.length===0`); await click('Close');
   checks.push('Schedule Pause/Delete retain explicit safeguards through new workspace navigation');
 
   await nav('Missions'); await click('Create mission'); await step('method'); await select('Execution mode', 'dag');
@@ -658,11 +704,27 @@ try {
   assert.equal(conditionalTask.workflowNodes.find((node) => node.id === 'fallback').state, 'SKIPPED');
   await nav('Library'); await wait(`document.querySelectorAll('.dash-result-card').length>0`);
   await evaluate(`[...document.querySelectorAll('.dash-result-card')].find(e=>e.textContent.includes('Inspect the actual agent-registry')).click()`);
-  await wait(`document.querySelector('article .dash-eyebrow')`); await click('เปิดภารกิจ');
+  await wait(`document.querySelector('article .dash-eyebrow')`); await click('เปิดภารกิจ', '[data-deliverable-detail] a');
   await wait(`document.querySelector('[aria-label="Workflow node status"]').textContent.includes('Condition else not selected')`);
+  const exactArtifact = `#/library/task-${conditionalTask.id}`;
+  const exactResults = `#/missions/${conditionalTask.id}?tab=results`;
+  await evaluate(`document.getElementById('task-detail-steps').focus()`);
+  await key('ArrowRight', 'ArrowRight', 39);
+  await wait(`location.hash === ${JSON.stringify(exactResults)} && document.activeElement.id==='task-detail-results' && document.querySelector('[data-mission-results] a')`);
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('[data-mission-results] a')].map(a => a.getAttribute('href'))`), [exactArtifact]);
+  await key('Tab');
+  assert.equal(await evaluate(`document.activeElement.getAttribute('href')`), exactArtifact);
+  await key('Enter', 'Enter', 13);
+  await wait(`location.hash === ${JSON.stringify(exactArtifact)} && document.activeElement.id==='dashboard-content' && document.querySelector('[data-deliverable-detail] article')`);
+  assert.equal(await evaluate(`document.querySelector('[data-deliverable-detail] a').getAttribute('href')`), `#/missions/${conditionalTask.id}`);
+  await evaluate('history.back()');
+  await wait(`location.hash === ${JSON.stringify(exactResults)} && document.activeElement.id==='dashboard-content' && document.querySelector('[data-mission-results] a')`);
+  await reload();
+  await wait(`location.hash === ${JSON.stringify(exactResults)} && document.querySelector('[data-mission-results] a')?.getAttribute('href') === ${JSON.stringify(exactArtifact)}`);
+  checks.push('B3 exact mission Results → archive anchor supports keyboard, reciprocal Task ID, Back and deep-link reload');
   await reload();
   await nav('Library'); await wait(`[...document.querySelectorAll('.dash-result-card')].some(e=>e.textContent.includes('Inspect the actual agent-registry'))`);
-  await evaluate(`[...document.querySelectorAll('.dash-result-card')].find(e=>e.textContent.includes('Inspect the actual agent-registry')).click()`); await click('เปิดภารกิจ');
+  await evaluate(`[...document.querySelectorAll('.dash-result-card')].find(e=>e.textContent.includes('Inspect the actual agent-registry')).click()`); await wait(`document.querySelector('[data-deliverable-detail] a')`); await click('เปิดภารกิจ', '[data-deliverable-detail] a');
   await wait(`document.querySelector('[aria-label="Workflow node status"]').textContent.includes('SKIPPED')`);
   checks.push('Conditional builder validates unsafe paths, reviews IF/ELSE and merge; actual tool result skips ELSE and restores decisions after reload');
 
@@ -677,7 +739,10 @@ try {
   assert.equal(elseTask.state, 'COMPLETED'); assert.equal(elseTask.workflowNodes.find((node) => node.id === 'matched').state, 'SKIPPED');
   assert.equal(elseTask.workflowNodes.find((node) => node.id === 'fallback').state, 'COMPLETED');
   checks.push('Editing typed condition values in browser selects ELSE without running IF; mission still produces final report');
-  await nav('Library'); await click('กลับไปผลงาน');
+  await nav('Library'); await wait(`document.querySelector('.dash-result-card')`);
+  await evaluate(`document.querySelector('.dash-result-card').click()`);
+  await wait(`location.hash.startsWith('#/library/')`);
+  await click('กลับไปผลงาน'); await wait(`location.hash==='#/library'`);
 
   const mailedTask = await api('/tasks', { description: '[TEAM:TECH] DASHBOARD_MAIL', workflow: { messaging: true, nodes: [{ id: 'sender', agent: 'NOVA', dependsOn: [] }, { id: 'report', agent: 'BYTE', dependsOn: ['sender'] }] } }); await drain();
   await nav('Activity'); await click('Messages'); await wait(`document.querySelector('.dash-activity').textContent.includes('DASHBOARD_REFERENCE')`); assert.equal(await evaluate(`document.querySelector('.dash-activity img')===null`), true);
@@ -702,13 +767,13 @@ try {
   await nav('Library'); await click('ผลงาน');
   checks.push('Team dossier links the exact mission and archive, archived detail survives reload, room has its own URL and Back restores the team dossier');
 
-  await nav('Library'); await wait(`document.querySelectorAll('.dash-result-card').length>0`); await evaluate(`document.querySelector('.dash-result-card').click()`); await wait(`document.querySelector('article .dash-eyebrow')`); await click('เปิดภารกิจ'); await wait(`document.querySelector('[role="main"]').textContent.includes('Task ID:')`);
+  await nav('Library'); await wait(`document.querySelectorAll('.dash-result-card').length>0`); await evaluate(`document.querySelector('.dash-result-card').click()`); await wait(`document.querySelector('article .dash-eyebrow')`); await click('เปิดภารกิจ', '[data-deliverable-detail] a'); await wait(`document.querySelector('[role="main"]').textContent.includes('Task ID:')`);
   checks.push('Archive projection enriches department/task IDs without mutating storage; artifact → mission cross-link works');
   await nav('Teams'); assert.equal(await evaluate(`document.querySelectorAll('.dash-agent-row').length`), 27); await evaluate(`document.querySelector('.dash-agent-row').click()`); await wait(`document.querySelector('[role="dialog"][aria-label^="Agent"]')`); await key('Escape', 'Escape', 27);
   await nav('Settings'); await click('Open settings'); await click('ขีดจำกัด'); await click('ข้อมูล / Backup'); await click('AI Provider'); await key('Escape', 'Escape', 27);
   checks.push('All 27 agents remain reachable with inspector; categorized Settings and dialog Escape/focus restoration work');
 
-  await nav('Teams'); await click('Analytics'); await wait(`document.querySelector('[aria-label="Analytics summary"]')`);
+  await nav('Analytics'); await wait(`document.querySelector('[aria-label="Analytics summary"]')`);
   const analyticsSnapshot = await api('/analytics?window=all&team=tech&agent=BYTE');
   await select('ช่วงเวลา Analytics', 'all'); await select('ทีม Analytics', 'tech'); await select('Agent Analytics', 'BYTE');
   await wait(`document.querySelectorAll('[aria-label="Agent performance table"] tbody tr').length===1 && document.querySelector('[aria-label="Agent performance table"] tbody tr').textContent.includes('BYTE') && document.querySelector('[aria-labelledby="analytics-title"]').getAttribute('aria-busy')==='false'`);
@@ -773,7 +838,7 @@ try {
   await wait(`document.querySelector('[aria-labelledby="aar-title"]').textContent.includes('recorded_context')`);
   const directReviewId = await evaluate(`location.hash`); assert.ok(directReviewId.includes('tab=review'));
   assert.equal(tasks().length, beforeAnalyticsTasks);
-  await nav('Teams'); await wait(`document.querySelector('.performance-recent')`);
+  await nav('Analytics'); await wait(`document.querySelector('.performance-recent')`);
   checks.push('B2 recent mission evidence links directly to its retained AAR using the existing route, with no task dispatch');
   await evaluate(`[...document.querySelectorAll('[aria-labelledby="analytics-title"] button')].find(e=>e.textContent==='เปิดภารกิจ').click()`); await wait(`document.querySelector('[role="main"]').textContent.includes('Task ID:')`);
   checks.push('Analytics team/agent/time filters match backend measured counts, refresh never dispatches, inspector and mission provenance links work');
@@ -781,7 +846,7 @@ try {
   assert.equal(await evaluate(`document.querySelector('[aria-labelledby="aar-title"]').textContent.includes('ข้อมูลที่ขาด / ข้อจำกัด')`), true);
   assert.equal(await evaluate(`!!document.querySelector('[aria-label="AAR execution evidence"]')`), true);
   const beforeAarReads = tasks().length; await click('รีเฟรช AAR'); await wait(`document.querySelector('[aria-labelledby="aar-title"]').getAttribute('aria-busy')==='false'`); assert.equal(tasks().length, beforeAarReads);
-  await nav('Teams'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"]')`); await select('ผลภารกิจ AAR', 'FAILED');
+  await nav('Analytics'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"]')`); await select('ผลภารกิจ AAR', 'FAILED');
   await wait(`document.querySelector('[aria-labelledby="aar-history-title"]').getAttribute('aria-busy')==='false' && [...document.querySelectorAll('[aria-labelledby="aar-history-title"] li')].every(e=>e.textContent.includes('FAILED'))`);
   await evaluate(`[...document.querySelectorAll('[aria-labelledby="aar-history-title"] button')].find(e=>e.textContent==='อ่าน AAR').click()`);
   await wait(`document.querySelector('[aria-labelledby="aar-title"]').textContent.includes('Stop:')`);
@@ -791,9 +856,9 @@ try {
   const aarSample = tasks().find(task=>task.workflowNodes?.some(node=>node.state==='SKIPPED'));
   const aarEvidence = await api(`/reviews/${aarSample.id}`); assert.ok(aarEvidence.report.context.nodes.some(node=>node.condition?.outcome==='not_selected'));
   for (let index=0; index<26; index+=1) await app.analytics.append({ task_id:`aar-legacy-${index}`, started_at:new Date().toISOString(), finished_at:new Date().toISOString(), duration_ms:0, department:'tech', mode:'dag', state:'COMPLETED', executions:[{...createExecutionObservation('execution-1','BYTE','work'),state:'COMPLETED'}] });
-  await nav('Teams'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"]')`);
+  await nav('Analytics'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"]')`);
   await select('ผลภารกิจ AAR','all'); await click('รีเฟรชประวัติ AAR');
-  await wait(`document.querySelectorAll('[aria-labelledby="aar-history-title"] li').length===25`);
+  await wait(`document.querySelectorAll('[aria-labelledby="aar-history-title"] li').length===25 && [...document.querySelectorAll('[aria-labelledby="aar-history-title"] button')].some(b=>b.textContent==='AAR ถัดไป' && !b.disabled)`);
   await click('AAR ถัดไป'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"]').getAttribute('aria-busy')==='false' && ![...document.querySelectorAll('[aria-labelledby="aar-history-title"] button')].find(e=>e.textContent==='AAR ก่อนหน้า').disabled`);
   await click('AAR ก่อนหน้า'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"]').getAttribute('aria-busy')==='false' && document.querySelector('[aria-labelledby="aar-history-title"] li').textContent.includes('aar-legacy-25')`);
   await evaluate(`[...document.querySelectorAll('[aria-labelledby="aar-history-title"] button')].find(e=>e.textContent==='อ่าน AAR').click()`);
@@ -816,19 +881,39 @@ try {
   app.analytics.storage.atomicWrite = aarWrite; await app.analytics.persist(); await click('รีเฟรช AAR'); await wait(`document.querySelector('[aria-labelledby="aar-title"]').getAttribute('aria-busy')==='false' && !document.querySelector('[aria-labelledby="aar-title"]').textContent.includes('AAR persistence degraded')`);
   checks.push('AAR explicitly warns on memory-only degraded persistence and clears warning after actual disk recovery');
   await reload();
-  await nav('Teams'); await click('Analytics'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"] li')`);
+  await nav('Analytics'); await wait(`document.querySelector('[aria-labelledby="aar-history-title"] li')`);
   await evaluate(`[...document.querySelectorAll('[aria-labelledby="aar-history-title"] button')].find(e=>e.textContent==='อ่าน AAR').click()`); await wait(`document.querySelector('[aria-labelledby="aar-title"]').textContent.includes('aar-degraded')`);
   checks.push('AAR history filters/paginates retained records; legacy explicitly lacks context; historical reports remain readable without runtime after browser reload');
-  await nav('Teams'); await click('รายชื่อทีม'); await click('Analytics');
-  await nav('Teams'); await select('ทีม Analytics', 'command'); await select('Agent Analytics', 'TAEC');
+  await nav('Teams'); await click('รายชื่อทีม'); await nav('Analytics');
+  await wait(`document.getElementById('analytics-title')`); await select('ทีม Analytics', 'command'); await select('Agent Analytics', 'TAEC');
   await wait(`document.querySelector('[aria-labelledby="analytics-title"]').textContent.includes('ยังไม่มีข้อมูลที่ตรงตัวกรอง') && document.querySelector('[aria-labelledby="analytics-title"]').getAttribute('aria-busy')==='false' && document.querySelectorAll('[aria-label="Agent performance table"] tbody tr').length===1 && document.querySelector('[aria-label="Agent performance table"] tbody tr').dataset.agent==='TAEC'`);
-  await select('ทีม Analytics', 'all'); await click('รายชื่อทีม');
+  await select('ทีม Analytics', 'all'); await nav('Teams');
 
   await app.storage.put('deliverables', { ...app.storage.get('deliverables').data, tech: [...app.storage.get('deliverables').data.tech, { id: 'task-unavailable-history', title: 'Historical archived mission', summary: 'Archive remains; runtime is unavailable', lead: 'BYTE', status: 'REAL_LLM' }] }, app.storage.get('deliverables').revision);
   await reload(); await nav('Library'); await wait(`document.querySelector('.dash-content').textContent.includes('Historical archived mission')`);
-  await evaluate(`[...document.querySelectorAll('.dash-result-card')].find(e=>e.textContent.includes('Historical archived mission')).click()`); await click('เปิดภารกิจ');
+  await evaluate(`[...document.querySelectorAll('.dash-result-card')].find(e=>e.textContent.includes('Historical archived mission')).click()`); await wait(`document.querySelector('[data-deliverable-detail] a')`); await click('เปิดภารกิจ', '[data-deliverable-detail] a');
   await wait(`document.querySelector('.dash-content').textContent.includes('ภารกิจนี้ไม่อยู่ใน runtime แล้ว')`);
-  checks.push('Historical artifact with missing runtime opens explicit unavailable state, never another task');
+  assert.deepEqual(await evaluate(`[...document.querySelectorAll('[data-mission-results] a')].map(a=>a.getAttribute('href'))`), ['#/library/task-unavailable-history']);
+  await evaluate(`document.querySelector('[data-mission-results] a').click()`);
+  await wait(`document.querySelector('[data-deliverable-detail] article')?.textContent.includes('Archive remains; runtime is unavailable')`);
+  checks.push('Historical artifact with missing runtime opens explicit unavailable state and links back to the exact preserved archive');
+
+  const missingArtifactHash = '#/library/b3-missing-artifact';
+  const beforeB3Read = app.storage.get('deliverables');
+  await evaluate(`location.hash=${JSON.stringify(missingArtifactHash)}`);
+  await wait(`document.querySelector('[data-deliverable-detail]')?.textContent.includes('ไม่พบผลงานนี้')`);
+  holdDeliverableRead = true;
+  await reload();
+  await wait(`document.querySelector('[data-deliverable-detail] [role="status"]') && !document.querySelector('[data-deliverable-detail] .dash-empty')`);
+  for (let i = 0; i < 40 && !deliverableRead; i += 1) await delay(50);
+  assert.ok(deliverableRead, 'Fixture must hold the archive read');
+  holdDeliverableRead = false;
+  await cdp('Fetch.fulfillRequest', { requestId: deliverableRead, responseCode: 503, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body: Buffer.from('{}').toString('base64') });
+  await wait(`document.querySelector('[data-deliverable-detail] [role="alert"]') && !document.querySelector('[data-deliverable-detail] .dash-empty')`);
+  await evaluate(`(async()=>{const {persistence}=await import('/src/lib/persistenceClient.js'); await persistence.sync();})()`);
+  await wait(`location.hash===${JSON.stringify(missingArtifactHash)} && document.querySelector('[data-deliverable-detail] .dash-empty') && !document.querySelector('[data-deliverable-detail] article')`);
+  assert.deepEqual(app.storage.get('deliverables'), beforeB3Read);
+  checks.push('B3 cold missing-artifact link shows loading → read failure → confirmed absence after recovery, with no redirect or archive write');
 
   for (const { width, height, mobile } of [
     { width: 1600, height: 1000, mobile: false }, { width: 1024, height: 768, mobile: false },
@@ -837,7 +922,7 @@ try {
   ]) {
     await cdp('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile }); await delay(100);
     for (const section of ['Overview', 'Missions', 'Library', 'Activity', 'Teams', 'Settings']) {
-      if (width < 1024 && ['Teams', 'Settings'].includes(section)) await click('More');
+
       await nav(section); const size = await evaluate(`({body:document.documentElement.scrollWidth,viewport:innerWidth,content:document.querySelector('.dash-content').scrollWidth,client:document.querySelector('.dash-content').clientWidth})`);
       if (section === 'Overview' && navigationEvidence && [1600, 390].includes(width)) {
         await evaluate(`document.querySelector('.dash-content').scrollTop=0`);
@@ -849,17 +934,17 @@ try {
       assert.equal(bellTarget, true, `Single Bell has unobstructed 44px target ${width} ${section}`);
       await physicalClick('#dashboard-notices-trigger');
       await wait(`document.getElementById('overview-notices-panel')`);
-      const noticeLayout = await evaluate(`(() => {const p=document.getElementById('overview-notices-panel'),r=p.getBoundingClientRect(),h=document.querySelector('.dash-topbar').getBoundingClientRect(),n=document.querySelector('.dash-mobile-nav').getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,headerBottom:h.bottom,navTop:n.top,scroll:p.scrollWidth,client:p.clientWidth,count:p.querySelectorAll('.overview-notice-list > li').length};})()`);
+      const noticeLayout = await evaluate(`(() => {const p=document.getElementById('overview-notices-panel'),r=p.getBoundingClientRect(),h=document.querySelector('.dash-topbar').getBoundingClientRect(),n=document.querySelector('.i47-copyright').getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,headerBottom:h.bottom,navTop:n.top,scroll:p.scrollWidth,client:p.clientWidth,count:p.querySelectorAll('.overview-notice-list > li').length};})()`);
       assert.ok(noticeLayout.left>=0 && noticeLayout.right<=width && noticeLayout.top>=noticeLayout.headerBottom && noticeLayout.bottom<=height && (width>=1024 || noticeLayout.bottom<=noticeLayout.navTop) && noticeLayout.scroll<=noticeLayout.client+1 && noticeLayout.count<=5, `Topbar preview contained ${width} ${section}: ${JSON.stringify(noticeLayout)}`);
       await evaluate(`document.querySelector('.overview-view-all').scrollIntoView({block:'nearest'})`);
       await physicalClick('.overview-view-all');
       await wait(`document.getElementById('activity-tabs-notices').getAttribute('aria-selected')==='true' && !document.getElementById('overview-notices-panel')`);
-      if (width < 1024 && ['Teams', 'Settings'].includes(section)) await click('More');
+
       await nav(section);
       layouts.push({width,section:`${section} Bell`,...noticeLayout});
       if (section === 'Overview') {
         await delay(80);
-        const dockLayout = await evaluate(`(() => {const d=document.querySelector('.overview-dock').getBoundingClientRect(),c=document.querySelector('.dash-content').getBoundingClientRect(),n=document.querySelector('.dash-mobile-nav').getBoundingClientRect();return {left:d.left,right:d.right,top:d.top,bottom:d.bottom,contentBottom:c.bottom,navTop:n.top,targets:[...document.querySelectorAll('.overview-dock > button')].every(e=>{const r=e.getBoundingClientRect();return r.width>=44 && r.height>=44 && e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})};})()`);
+        const dockLayout = await evaluate(`(() => {const d=document.querySelector('.overview-dock').getBoundingClientRect(),c=document.querySelector('.dash-content').getBoundingClientRect(),n=document.querySelector('.i47-copyright').getBoundingClientRect();return {left:d.left,right:d.right,top:d.top,bottom:d.bottom,contentBottom:c.bottom,navTop:n.top,targets:[...document.querySelectorAll('.overview-dock > button')].every(e=>{const r=e.getBoundingClientRect();return r.width>=44 && r.height>=44 && e.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})};})()`);
         assert.ok(dockLayout.left>=0 && dockLayout.right<=width && dockLayout.bottom<=height && dockLayout.top>=dockLayout.contentBottom && dockLayout.targets && (width>=1024 || dockLayout.bottom<=dockLayout.navTop), `Dock reserved lane and physical hit targets ${width}: ${JSON.stringify(dockLayout)}`);
         await physicalClick('#dashboard-notices-trigger');
         await wait(`document.getElementById('overview-notices-panel')`);
@@ -875,11 +960,12 @@ try {
         assert.equal(await evaluate(`document.activeElement.id`), 'dashboard-notices-trigger');
         if (width===390) {
           await writeFile(screenshotPath('overview-a-mobile.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
-          await click('More');
-          assert.equal(await evaluate(`document.querySelector('.overview-dock')===null`), true, 'Expanded mobile navigation suspends dock');
-          assert.equal(await evaluate(`document.getElementById('dashboard-notices-trigger').disabled`), true);
-          await key('Escape','Escape',27);
-          await wait(`document.querySelector('.overview-dock')`);
+          await openCore(); await delay(260);
+          await physicalClick('[data-home-view="realm"]');
+          await wait(`document.getElementById('realm-world-title')`);
+          assert.equal(await evaluate(`document.querySelector('.overview-dock')===null`), true, 'Realm selector does not show the deck dock');
+          await click('Open Command Deck', '[data-realm-mode]');
+          await wait(`document.querySelector('.overview-dock') && document.querySelector('.guild-world')`);
         }
         assert.equal(await evaluate(`[...document.querySelectorAll('.guild-world-zoom button,.guild-motion-button,.guild-room-select')].filter(e=>e.getClientRects().length).every(e=>{const b=e.getBoundingClientRect();return b.height>=44 && b.width>=44;})`), true, `Map HUD targets at least 44 CSS pixels at ${width}`);
         const contained = await evaluate(`(() => {const r=document.querySelector('.guild-world').getBoundingClientRect();return [...document.querySelectorAll('.guild-island')].every(e=>{const b=e.getBoundingClientRect();return b.left>=r.left && b.right<=r.right && b.top>=r.top && b.bottom<=r.bottom;});})()`);
@@ -908,8 +994,10 @@ try {
         }
       }
       if (width < 1024) {
-        const bounds = await evaluate(`(() => {const nav=document.querySelector('.dash-mobile-nav').getBoundingClientRect(),main=document.querySelector('.dash-content').getBoundingClientRect(),header=document.querySelector('.dash-topbar').getBoundingClientRect();return {navTop:nav.top,navBottom:nav.bottom,contentTop:main.top,contentBottom:main.bottom,headerBottom:header.bottom,viewport:innerHeight};})()`);
-        assert.ok(bounds.navTop >= bounds.contentBottom - 1 && bounds.navBottom <= height + 1 && bounds.contentTop >= bounds.headerBottom - 1, `Mobile nav is below content without overlap ${width}: ${JSON.stringify(bounds)}`);
+        const bounds = await evaluate(`(() => {const box=selector=>document.querySelector(selector).getBoundingClientRect().toJSON();return {nav:box('.i47-core-bar'),main:box('.dash-content'),header:box('.dash-topbar')};})()`);
+        const { nav: railBox, main, header } = bounds;
+        const separate = width <= 760 ? railBox.bottom === main.top && railBox.width === width && main.width === width : railBox.right === main.left;
+        assert.ok(separate && railBox.left>=0 && railBox.top===header.bottom && main.top>=header.bottom && main.bottom<=height+1, `Closed navigation and content occupy separate tracks at ${width}px: ${JSON.stringify(bounds)}`);
       }
       if (width === 390 && section === 'Overview') {
         await delay(5600);
@@ -927,7 +1015,7 @@ try {
     await click('ผลงาน');
     await click('Create mission'); await step('method'); await select('Execution mode', 'dag'); await click('Conditional branching example');
     let size = await evaluate(`({scroll:document.querySelector('.dash-builder').scrollWidth,client:document.querySelector('.dash-builder').clientWidth})`); assert.ok(size.scroll <= size.client + 1, `Builder contained ${width}`); await click('Close');
-    if (width < 1024) { assert.equal(await evaluate(`getComputedStyle(document.querySelector('.dash-mobile-nav')).display`), 'flex'); await click('More'); await nav('Teams'); } else await nav('Teams');
+    if (width < 1024) { await openCore(); assert.equal(await evaluate(`getComputedStyle(document.querySelector('.i47-categories')).display`), 'grid'); } await nav('Teams');
     await click('รายชื่อทีม');
     await evaluate(`document.querySelector('[data-team-open="tech"]').click()`); await wait(`document.querySelector('[data-team-workspace="tech"]')`);
     const dossierSize = await evaluate(`({body:document.documentElement.scrollWidth,content:document.querySelector('.dash-content').scrollWidth,client:document.querySelector('.dash-content').clientWidth})`);
@@ -936,17 +1024,17 @@ try {
     if (width === 390 && navigationEvidence) await writeFile(join(navigationEvidence, 'team-workspace-mobile.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
     await evaluate(`document.querySelector('.team-workspace .dash-agent-row').focus()`); await key('Enter', 'Enter', 13); await wait(`document.querySelector('[role="dialog"][aria-label^="Agent"]')`); await key('Escape', 'Escape', 27);
     await click('All teams');
-    await click('Analytics'); await wait(`document.querySelector('[aria-label="Agent performance table"]')`);
+    await nav('Analytics'); await wait(`document.querySelector('[aria-label="Agent performance table"]')`);
     const analyticsSize = await evaluate(`({body:document.documentElement.scrollWidth,content:document.querySelector('.dash-content').scrollWidth,client:document.querySelector('.dash-content').clientWidth,table:document.querySelector('[aria-label="Agent performance table"]').scrollWidth,tableClient:document.querySelector('[aria-label="Agent performance table"]').clientWidth})`);
     layouts.push({ width, section: 'Analytics', ...analyticsSize }); assert.ok(analyticsSize.body<=width+1 && analyticsSize.content<=analyticsSize.client+1, `Analytics overflow contained ${width}: ${JSON.stringify(analyticsSize)}`);
     await wait(`document.querySelector('[aria-labelledby="aar-history-title"] li')`);
     await evaluate(`[...document.querySelectorAll('[aria-labelledby="aar-history-title"] button')].find(e=>e.textContent==='อ่าน AAR').click()`); await wait(`document.querySelector('[aria-label="AAR execution evidence"]')`);
     const aarSize = await evaluate(`({body:document.documentElement.scrollWidth,content:document.querySelector('.dash-content').scrollWidth,client:document.querySelector('.dash-content').clientWidth})`);
     layouts.push({width,section:'AAR',...aarSize}); assert.ok(aarSize.body<=width+1 && aarSize.content<=aarSize.client+1,`AAR overflow contained ${width}: ${JSON.stringify(aarSize)}`);
-    if(width<1024) await click('More'); await nav('Teams');
+    await nav('Teams');
     await click('Spatial Map'); await click('Topology'); await click('ห้องทำงาน');
     size = await evaluate(`({body:document.documentElement.scrollWidth,viewport:innerWidth})`); assert.ok(size.body <= width + 1, `Spatial page contained ${width}`);
-    if (width < 1024) { await click('More'); await nav('Settings'); } else await nav('Settings');
+    await nav('Settings');
     await click('Open settings'); size = await evaluate(`({scroll:document.querySelector('.dash-settings-dialog').scrollWidth,client:document.querySelector('.dash-settings-dialog').clientWidth})`); assert.ok(size.scroll <= size.client + 1, `Settings contained ${width}`); await key('Escape', 'Escape', 27);
   }
   checks.push('Desktop 1600/1024, tablet 768, mobile 390/360: navigation, core pages, Builder, Settings and spatial page overflow contained');
@@ -957,15 +1045,24 @@ try {
   await nav('Overview'); await evaluate(`document.querySelector('.dash-content').scrollTop=0`);
   const compactOverview = await evaluate(`(() => {const c=document.querySelector('.dash-content');return {body:document.documentElement.scrollWidth,client:c.clientWidth,content:c.scrollWidth,cards:[...document.querySelectorAll('.dash-metric')].map(e=>({height:e.getBoundingClientRect().height,scroll:e.scrollWidth,client:e.clientWidth}))};})()`);
   assert.ok(compactOverview.body<=320 && compactOverview.content<=compactOverview.client+1 && compactOverview.cards.every(card=>card.height>=120 && card.scroll<=card.client+1), JSON.stringify(compactOverview));
-  await click('More');
-  const compactMenu = await evaluate(`(() => {const m=document.querySelector('.guild-mobile-menu-panel'),r=m.getBoundingClientRect();return {left:r.left,right:r.right,bottom:r.bottom,scroll:m.scrollWidth,client:m.clientWidth};})()`);
-  assert.ok(compactMenu.left>=0 && compactMenu.right<=320 && compactMenu.bottom<=740 && compactMenu.scroll<=compactMenu.client+1);
-  await nav('Teams'); await click('More');
-  await physicalClick('.guild-mobile-menu-panel [data-nav-view="Guild map"]');
-  await wait(`location.hash==='#/teams?view=realm' && !document.querySelector('.dash-mobile-menu')`);
+  const compactDock = await evaluate(`(() => {const b=document.getElementById('overview-status-trigger'),r=b.getBoundingClientRect();return {width:r.width,height:r.height,left:r.left,right:r.right,hit:b.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};})()`);
+  assert.ok(compactDock.left>=0 && compactDock.right<=320 && compactDock.width<=220 && compactDock.height>=44 && compactDock.hit, JSON.stringify(compactDock));
+  await openCore(); await delay(260); await physicalClick('[data-home-view="realm"]');
+  await physicalClick('[data-realm-mode="station"]');
+  await wait(`location.hash==='#/home/station' && !document.getElementById('realm-world-title') && document.querySelector('.guild-world')`);
+  const compactPage = await evaluate(workspaceLayout);
+  await openCore(); await delay(260);
+  const compactMenu = await evaluate(coreMenuLayout);
+  const rail = await evaluate(`[...document.querySelectorAll('.i47-category > button')].map(b=>{const r=b.getBoundingClientRect();return [r.x,r.y,r.right,r.width,r.height]})`);
+  assert.ok(rail.length===5 && rail.every(([x,y,right,w,h],i)=>x>=compactMenu.left && x===rail[0][0] && (!i || y>=rail[i-1][1]+rail[i-1][4]) && right<=compactMenu.right && w>=44 && h>=44), JSON.stringify(rail));
+  assert.ok(compactMenu.left>=compactMenu.railLeft && compactMenu.right<=compactMenu.railRight && compactMenu.top===compactMenu.railBottom && compactMenu.railRight<=320 && compactMenu.bottom<=740 && compactMenu.scroll<=compactMenu.client+1 && compactMenu.documentWidth<=320, `Home panel fits its mobile top bar: ${JSON.stringify(compactMenu)}`);
+  assert.deepEqual(await evaluate(workspaceLayout), compactPage, 'Opening mobile navigation does not move the 2.5D page');
+  assert.equal(await evaluate(`(() => {const m=document.getElementById('i47-core-menu').getBoundingClientRect(),t=document.getElementById('i47-core-trigger').getBoundingClientRect(),list=[...document.querySelectorAll('#i47-core-home button')].map(e=>e.getBoundingClientRect());return m.top>=t.bottom && m.left===t.left && list.every((e,i)=>e.left>t.left && e.right<=m.right && e.width>=44 && e.height>=44 && (!i || e.top>=list[i-1].bottom));})()`), true, 'Mobile destinations stack under their category inside the top-bar panel');
+  if (navigationEvidence) await writeFile(screenshotPath('realm-home-menu-mobile.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
   assert.equal(await evaluate(`document.querySelectorAll('.guild-island').length`), 8);
-  layouts.push({width:320,section:'Guild Overview',...compactOverview,menu:compactMenu});
-  checks.push('320px guild Overview keeps four readable cards contained; More menu scrolls within viewport and contextual map receives a physical click');
+  await key('Escape', 'Escape', 27);
+  layouts.push({width:320,section:'Guild Overview',...compactOverview,menu:compactMenu,dock:compactDock});
+  checks.push('320px guild Overview keeps four readable cards and one compact task-status target contained; Home submenu fits and 2.5D Station receives a physical click');
   await cdp('Emulation.setDeviceMetricsOverride', { width: 360, height: 740, deviceScaleFactor: 1, mobile: true });
   await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await nav('Overview'); await select('เข้าห้องทีมจากแผนที่','command'); await wait(`document.querySelector('.cozy-room')?.dataset.motion==='off'`);
@@ -1045,7 +1142,7 @@ try {
   await nav('Library'); await wait(`document.querySelector('.dash-result-card')`);
   await evaluate(`document.querySelector('.dash-result-card').click()`); await wait(`document.querySelector('article .dash-eyebrow')`);
   holdChunk = 'AfterActionReview';
-  await click('เปิดภารกิจ');
+  await click('เปิดภารกิจ', '[data-deliverable-detail] a');
   if (await evaluate(`!!document.getElementById('task-detail-review')`)) await click('After Action Review');
   await wait(`document.querySelector('[data-lazy-state="loading"]')`);
   await waitForHeldChunk();
@@ -1061,7 +1158,7 @@ try {
     await waitForHeldChunk(); expectedChunkFailure = chunk; holdChunk = '';
     for (const requestId of heldChunks.keys()) await cdp('Fetch.failRequest', { requestId, errorReason: 'Failed' });
     heldChunks.clear(); await wait(`document.querySelector('[data-lazy-state="error"]')`);
-    assert.equal(await evaluate(`!!document.querySelector('.dash-sidebar nav')`), true);
+    assert.equal(await evaluate(`!!document.querySelector('.i47-categories')`), true);
     if (chunk === 'WorkflowBuilderModal') {
       assert.equal(await evaluate(`document.querySelector('.dash-builder').contains(document.activeElement)`), true);
       await key('Escape', 'Escape', 27); await wait(`!document.querySelector('.dash-builder')`);
@@ -1073,12 +1170,14 @@ try {
   }
   checks.push('Injected chunk failures stay contained; navigation survives and failed Builder supports Escape, focus restoration and reopening');
   await checkCollectionSync();
+  await checkWorkspaceAttention();
   await reload();
   await checkCeoDirective();
   await reload();
   await app.close(); app = null;
   await wait(`!document.querySelector('.dash-connection.is-live')`); await nav('Overview'); await wait(`document.querySelector('.dash-content').textContent.includes('ยังไม่เชื่อมต่อ backend')`);
   assert.equal(await evaluate(`document.querySelector('.overview-dock .overview-backend').textContent`), 'Offline');
+  assert.equal(await evaluate(`document.querySelector('.overview-dock-counts')`), null, 'Disconnected dock does not present retained counts as live');
   await physicalClick('#overview-status-trigger');
   await wait(`document.querySelector('.overview-dock-warning')`);
   assert.equal(await evaluate(`document.getElementById('overview-status-panel').textContent.includes('ไม่ใช่การยืนยัน AI provider')`), true);
@@ -1087,12 +1186,384 @@ try {
   assert.equal(await evaluate(`[...document.querySelectorAll('.dash-builder button')].find(e=>e.type==='submit').disabled`), true); await click('Close');
   checks.push('Offline overview explains backend loss; dispatch is disabled without connection');
   checks.push('Overview Status switches to Offline and explains stale retained data, without claiming provider health');
-  if (await evaluate(`innerWidth<1024`)) await click('More');
-  await nav('Teams'); await click('Analytics'); await wait(`document.querySelector('[aria-labelledby="analytics-title"]').textContent.includes('Backend ออฟไลน์')`);
+
+  await nav('Analytics'); await wait(`document.querySelector('[aria-labelledby="analytics-title"]').textContent.includes('Backend ออฟไลน์')`);
   assert.equal(await evaluate(`[...document.querySelectorAll('[aria-labelledby="analytics-title"] button')].find(e=>e.textContent==='รีเฟรชสถิติ').disabled`), true);
   checks.push('Analytics explains offline state and disables refresh instead of presenting fabricated live data');
-  assert.equal(await evaluate(`document.querySelector('[aria-labelledby="aar-history-title"]').textContent.includes('Backend ออฟไลน์')`),true);
+  await wait(`document.querySelector('[aria-labelledby="aar-history-title"]')?.textContent.includes('Backend ออฟไลน์')`);
   checks.push('AAR history explicitly explains offline state; no fabricated cached backend history');
+  }
+
+  async function checkWorkspaceAttention() {
+    await nav('Home');
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 320, height: 640, deviceScaleFactor: 1, mobile: true });
+    await evaluate(`document.getElementById('i47-drawer-crew').click()`);
+    await wait(`document.querySelectorAll('.i47-crew-list li').length===27`);
+    await evaluate(`document.querySelector('.i47-crew-list button').focus();document.activeElement.click()`);
+    await wait(`document.querySelector('.i47-action-overlay[open]')?.textContent.includes('TAEC')`);
+    assert.ok(await evaluate(`(() => {const b=document.querySelector('.i47-action-overlay').getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.bottom<=innerHeight})()`));
+    await key('Escape', 'Escape', 27);
+    await wait(`document.activeElement===document.querySelector('.i47-crew-list button')`);
+    await key('Escape', 'Escape', 27);
+    await wait(`document.activeElement.id==='i47-drawer-crew' && !document.getElementById('i47-drawer')`);
+    const origin = await evaluate('location.href');
+    const review = await api('/tasks', { description: '[TEAM:TECH] Slice 2 fixture', workflow: { nodes: [
+      { id: 'report', agent: 'LEX', dependsOn: [] }, { id: 'human', agent: 'HUMAN', prompt: 'Slice 2 fixture question', dependsOn: ['report'] }
+    ] } });
+    await wait(`document.querySelector('.dash-toast')?.textContent.includes('LEX · report approval requested')`);
+    assert.equal(await evaluate('location.href'), origin);
+    assert.equal(await evaluate(`!!document.querySelector('.i47-action-overlay')`), false);
+    await click('เปิดรายละเอียด', '.dash-toast button');
+    await wait(`document.querySelector('.i47-action-overlay[open]')?.textContent.includes('อนุมัติรายงาน')`);
+    assert.equal(await evaluate(`!!document.querySelector('.i47-action-overlay textarea')`), false);
+    await evaluate(`document.querySelector('.i47-action-overlay details').open=true`);
+    assert.match(await evaluate(`document.querySelector('.i47-action-overlay details').textContent`), /Deterministic dashboard report/);
+    for (let i = 0; i < 105; i++) telemetryBus.publish({ event_type: 'FIXTURE_ACTIVITY', source_agent: 'ARIA' });
+    for (const client of app.wss.clients) client.close(1013, 'fixture reconnect');
+    await wait(`!document.querySelector('.dash-connection.is-live') && document.querySelector('.i47-action-overlay button.primary').disabled`);
+    await wait(`document.querySelector('.dash-connection.is-live') && !document.querySelector('.i47-action-overlay button.primary').disabled`);
+    assert.equal(await evaluate(`document.querySelector('.dash-toast')`), null);
+    const approval = app.orchestrator.listPendingApprovals().find((item) => item.task_id === review.task_id);
+    assert.ok(approval);
+    const senderTab = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' })).json();
+    const sender = new WebSocket(senderTab.webSocketDebuggerUrl);
+    try {
+      await new Promise((resolve, reject) => { sender.once('open', resolve); sender.once('error', reject); });
+      const senderEval = (id, method, params) => new Promise((resolve, reject) => {
+        const handle = (raw) => { const message = JSON.parse(raw); if (message.id !== id) return; cleanup(); message.error || message.result?.exceptionDetails ? reject(new Error(JSON.stringify(message))) : resolve(message.result); };
+        const timer = setTimeout(() => { cleanup(); reject(new Error(`Second tab ${method} timed out`)); }, 10000);
+        const cleanup = () => { clearTimeout(timer); sender.off('message', handle); };
+        sender.on('message', handle); sender.send(JSON.stringify({ id, method, params }));
+      });
+      await senderEval(1, 'Page.navigate', { url: `${url}/#/home/opening` });
+      // The other tab sends the same existing route the UI uses, exactly once.
+      const outcome = await senderEval(2, 'Runtime.evaluate', { awaitPromise: true, returnByValue: true, expression: `(async () => {
+        for(let i=0;i<80&&!document.querySelector('.dash-connection.is-live');i++)await new Promise(r=>setTimeout(r,100));
+        if(!document.querySelector('.dash-connection.is-live'))throw Error('Second workspace is not live');
+        return (await fetch('/api/hitl/${approval.approval_id}',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"decision":"approve"}'})).status;
+      })()` });
+      assert.equal(outcome.result.value, 200);
+      await wait(`document.querySelector('.i47-action-overlay')?.textContent.includes('no longer pending') && !document.querySelector('.i47-action-overlay button.primary')`);
+    } finally { sender.close(); await fetch(`http://127.0.0.1:${port}/json/close/${senderTab.id}`).catch(() => {}); }
+    await key('Escape', 'Escape', 27);
+    await wait(`!document.querySelector('.i47-action-overlay')`);
+    await evaluate(`document.getElementById('i47-drawer-attention').click()`);
+    await wait(`document.querySelector('[data-attention="waiting"] button')?.textContent.includes('Slice 2 fixture')`);
+    assert.ok(await evaluate(`new Set([...document.querySelectorAll('[data-attention]')].map(e=>getComputedStyle(e).borderInlineStartColor)).size===4`));
+    await evaluate(`document.querySelector('[data-attention="waiting"] button').focus();document.activeElement.click()`);
+    await wait(`document.querySelector('.i47-action-overlay textarea')`);
+    assert.equal(await evaluate(`!!document.querySelector('.i47-action-overlay button.primary')`), false);
+    await input('Your contribution', 'Fixture answer');
+    await click('Submit & continue', '.i47-action-overlay button');
+    await wait(`document.querySelector('.i47-action-overlay')?.textContent.includes('no longer pending')`);
+    await click('', '.i47-action-overlay button[aria-label="Close workspace popup"]');
+    await wait(`document.activeElement.id==='i47-drawer-attention'`);
+    assert.equal(await evaluate('location.href'), origin);
+    await drain();
+    assert.equal(app.orchestrator.tasks.get(review.task_id).state, 'COMPLETED');
+    await key('Escape', 'Escape', 27);
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
+    checks.push('Slice 2 CREW and ATTENTION fit at 320px; keyboard closes to the opener, including a resolved row');
+    checks.push('Slice 2 live toast opens exact report in place; reconnect retains it beyond event history and disables decisions while offline');
+    checks.push('Slice 2 second-tab approval clears the open report; HUMAN contribution stays separate and completes on the originating page');
+  }
+
+  async function checkHudWorkspace() {
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+    await wait(`document.querySelector('.i47-viewport canvas')?.width>300`);
+    assert.equal(await evaluate(`document.getElementById('i47-core-menu').hidden && [...document.querySelectorAll('.i47-core-bar button')].filter(b=>b.getClientRects().length).map(b=>b.id).join()==='i47-core-trigger'`), true);
+    await evaluate(`document.querySelector('${coreTrigger}').focus()`); await key('Enter','Enter',13);
+    await wait(`document.activeElement.id==='i47-heading-home'`);
+    const visibleLists = `[...document.querySelectorAll('.i47-context-nav')].filter(el=>el.getClientRects().length).map(el=>el.id)`;
+    assert.deepEqual(await evaluate(visibleLists), ['i47-core-home']);
+    assert.equal(await evaluate(`document.querySelectorAll('.i47-categories .i47-category > button').length`), 5);
+    assert.equal(await evaluate(`document.querySelector('[data-home-view="visualizer"]').textContent.trim()`), 'Realm Intelligence 3D');
+    assert.equal(await evaluate(`document.querySelector('[data-nav-view="Analytics"]').closest('ul').id`), 'i47-core-dashboards');
+    if (navigationEvidence) { await delay(260); await writeFile(screenshotPath('realm-home-menu.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64')); }
+    await evaluate(`document.querySelector('#i47-heading-agents').focus()`);
+    assert.equal(await evaluate(`document.activeElement.id`), 'i47-heading-agents', 'Agents receives keyboard focus');
+    await key('Enter', 'Enter', 13);
+    await wait(`${visibleLists}.join()==='i47-core-agents'`);
+    assert.deepEqual(await evaluate(visibleLists), ['i47-core-agents']);
+    await wait(`document.activeElement.closest('ul')?.id==='i47-core-agents'`);
+    assert.equal(await evaluate(`document.activeElement.closest('ul').id`), 'i47-core-agents');
+    await evaluate(`document.getElementById('i47-heading-copilot-47').focus()`);
+    await key('Tab');
+    await wait(`!document.activeElement.closest('.i47-core-bar') && document.getElementById('i47-core-menu').hidden`);
+    await openCore(); await evaluate(`document.querySelector('#i47-heading-agents').focus()`); await key('ArrowDown','ArrowDown',40);
+    await wait(`document.activeElement.closest('ul')?.id==='i47-core-agents'`);
+    await key('Escape', 'Escape', 27);
+    await wait(`document.activeElement.id==='i47-core-trigger' && document.getElementById('i47-core-menu').hidden`);
+    assert.equal(await evaluate(`document.querySelectorAll('.i47-visual-stage .i47-forecast-days button').length`), 5);
+    assert.equal(await evaluate(`!!document.querySelector('[aria-label="Weather display mode"]')`), false);
+    await click('Day 0325°CShowers', '.i47-forecast-days button');
+    assert.equal(await evaluate(`!location.hash && document.querySelector('.i47-weather-reading').textContent.includes('25°C')`), true);
+    assert.equal(await evaluate(`document.querySelector('.i47-forecast-days [aria-pressed="true"]').textContent`), 'Day 0325°CShowers');
+    await evaluate(`document.querySelector('.i47-viewport').focus()`); await key('ArrowRight', 'ArrowRight', 39);
+    assert.match(await evaluate(`document.querySelector('.i47-camera output').textContent`), /-10°/);
+    await click('Reset view'); await click('Day 0127°CPartly cloudy', '.i47-forecast-days button');
+    assert.equal(await evaluate(`document.querySelector('.i47-weather-reading').textContent.includes('27°C')`), true);
+    await evaluate(`document.querySelector('.i47-web-status > button').click()`);
+    assert.equal(await evaluate(`document.querySelector('#i47-session').open && !location.hash`), true);
+    await key('Escape', 'Escape', 27);
+    await wait(`!document.querySelector('#i47-session').open && document.activeElement.matches('.i47-web-status > button')`);
+    assert.equal(await evaluate(`document.querySelectorAll('#i47-session time').length===1 && document.querySelector('#i47-session').textContent.includes('Workspace WebSocketLinked') && document.querySelector('.i47-web-status').offsetWidth<150`), true);
+    await checkLandingIndex();
+    await checkHomePolish(visibleLists);
+    const activeCore = `document.querySelector('${coreTrigger}').dataset.currentCore`;
+    await chooseCorePage('Armory', 'Glossary');
+    const glossary = `location.hash==='#/settings/glossary' && document.querySelector('.i47-glossary') && ${activeCore}==='armory'`;
+    const opening = `!location.hash && document.querySelector('.i47-viewport canvas') && ${activeCore}==='home'`;
+    await wait(glossary);
+    await evaluate('history.back()'); await wait(opening);
+    await evaluate('history.forward()'); await wait(glossary);
+    await evaluate('history.back()'); await wait(opening);
+    await evaluate(`location.hash='#/overview'`);
+    await wait(`document.querySelector('.guild-world') && document.querySelector('[data-current-location]').textContent==='Command Deck' && ${activeCore}==='home'`);
+    await evaluate(`location.hash='#/home/visualizer'`);
+    await wait(`document.querySelector('#i47-nexus-title')?.textContent==='Realm Intelligence 3D' && ${activeCore}==='home'`);
+    await evaluate('history.go(-2)'); await wait(opening);
+    if (navigationEvidence) await writeFile(screenshotPath('realm-opening-integrated.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
+    checks.push('Core owner disclosure, Home forecast without route changes, Canvas keyboard/reset, session dialog, direct bookmarks and active category on Back/Forward');
+    await evaluate(`[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='Customize HUD').focus()`);
+    await key('Enter', 'Enter', 13);
+    await wait(`document.querySelector('#i47-hud-title') && [...document.querySelectorAll('.i47-hud-form button')].some(b=>b.textContent==='Save to Workspace' && !b.disabled)`);
+    await key('Escape', 'Escape', 27);
+    assert.equal(await evaluate(`document.activeElement.textContent.trim()`), 'Customize HUD');
+    await evaluate(`document.querySelector('${coreTrigger}').focus()`); await key('ArrowDown', 'ArrowDown', 40);
+    await wait(`document.activeElement.dataset.homeView==='opening'`);
+    await evaluate(`document.querySelector('[data-home-view="realm"]').focus()`); await key('Enter', 'Enter', 13);
+    await wait(`location.hash==='#/home/realm' && document.querySelectorAll('[data-realm-mode]').length===3`);
+    await click('Open Realm Intelligence 3D', '[data-realm-mode]');
+    await wait(`location.hash==='#/home/visualizer' && document.querySelector('.i47-viewport canvas')`);
+    assert.deepEqual(await evaluate(`[document.querySelector('#i47-nexus-title').textContent,document.querySelector('[data-current-location]').textContent,document.querySelector('.i47-viewport').getAttribute('aria-label')]`), Array(3).fill('Realm Intelligence 3D'));
+    const pixel = `document.querySelector('.i47-viewport canvas').toDataURL()`;
+    const before = await evaluate(pixel);
+    await wait(`${pixel}!==${JSON.stringify(before)}`);
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await wait(`document.querySelector('.i47-shell').dataset.visualMotion==='off'`);
+    const paused = await evaluate(pixel);
+    await delay(180); assert.equal(await evaluate(pixel), paused, 'OS reduction stops Canvas redraws');
+    await evaluate(`document.querySelector('.i47-viewport').focus()`); await key('ArrowRight', 'ArrowRight', 39);
+    assert.notEqual(await evaluate(pixel), paused, 'Manual interaction still redraws the paused scene');
+    await cdp('Emulation.setEmulatedMedia', { features: [] });
+    checks.push('Legacy visualizer hash presents Realm Intelligence 3D; Nexus moves without input and remains keyboard-operable with OS motion paused');
+    assert.equal(await evaluate(`document.querySelector('.dash-shell').dataset.hudTheme`), 'kali-cyber');
+    await evaluate('history.back()'); await wait(`document.getElementById('realm-world-title')`);
+    await evaluate('history.back()'); await wait(`!location.hash && document.querySelector('[data-feed="log"][aria-expanded="false"]')`);
+    const prior = await api('/hud-preferences');
+    const receiver = await (await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' })).json();
+    const peer = new WebSocket(receiver.webSocketDebuggerUrl);
+    let seq = 0;
+    const readPeer = async (expression) => {
+      const id = ++seq;
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { peer.off('message', listener); reject(new Error('HUD peer evaluation timed out')); }, 5000);
+        function listener(raw) { const message = JSON.parse(raw); if (message.id === id) { clearTimeout(timer); peer.off('message', listener); resolve(message.result?.result?.value); } }
+        peer.on('message', listener); peer.send(JSON.stringify({ id, method: 'Runtime.evaluate', params: { expression, returnByValue: true } }));
+      });
+    };
+    try {
+      await new Promise((resolve, reject) => { peer.once('open', resolve); peer.once('error', reject); });
+      await wait(`document.querySelector('.dash-connection.is-live')`, readPeer);
+      await click('Customize HUD'); await select('Theme', 'realm-cyber'); await select('Accent', '#c5a3ff');
+      await input('Operator name (this browser only)', 'Fixture Operator');
+      await click('Save to Workspace');
+      await wait(`document.querySelector('.dash-shell').dataset.hudTheme==='realm-cyber'`);
+      // The peer must update sooner than the 15-second polling fallback.
+      await wait(`document.querySelector('.dash-shell').dataset.hudAccent==='#c5a3ff'`, readPeer);
+      const saved = await api('/hud-preferences');
+      assert.deepEqual(saved.data, { theme: 'realm-cyber', accent: '#c5a3ff', tacticalGrid: false });
+      assert.equal(saved.revision, prior.revision + 1);
+      await reload();
+      await wait(`document.querySelector('.i47-greeting').textContent.includes('Fixture Operator') && document.querySelector('.dash-shell').dataset.hudTheme==='realm-cyber'`);
+      await click('Customize HUD'); await wait(`[...document.querySelectorAll('.i47-hud-form button')].some(b=>b.textContent==='Save to Workspace' && !b.disabled)`);
+      const conflict = await fetch(`${target}/api/hud-preferences`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ revision: saved.revision, data: prior.data }) });
+      assert.equal(conflict.status, 200);
+      await wait(`document.querySelector('.i47-hud-form').textContent.includes('Reload them before saving')`);
+      assert.equal(await evaluate(`document.querySelector('.i47-hud-form button[type=submit]').disabled`), true);
+      await key('Escape', 'Escape', 27);
+      await wait(`document.querySelector('.dash-shell').dataset.hudTheme==='kali-cyber'`);
+      await click('Call 47'); await wait(`location.hash==='#/copilot-47'`);
+      assert.equal(tasks().length, 0);
+      await evaluate('history.back()'); await wait(`!location.hash && document.querySelector('[data-feed="log"][aria-expanded="false"]')`);
+    } finally {
+      peer.close();
+      await fetch(`http://127.0.0.1:${port}/json/close/${receiver.id}`).catch(() => {});
+    }
+    checks.push('HUD keyboard focus, dual-tab WS revision, reload, browser-only name, stale draft protection, and Call 47 without dispatch');
+  }
+
+  async function checkHomePolish(visibleLists) {
+    const backdrop = `.i47-shell > .i47-workspace-ambient`;
+    const planes = `[...document.querySelectorAll('${backdrop} .i47-star-plane')]`;
+    await evaluate(`void (window.i47FixtureBackdrop=document.querySelector('${backdrop}'))`);
+    const checkBackdrop = async () => assert.equal(await evaluate(`(() => {const a=document.querySelector('${backdrop}'),f=a.getBoundingClientRect(),s=a.parentElement.getBoundingClientRect();return a===window.i47FixtureBackdrop && f.width===s.width && f.height===s.height && f.x===s.x && f.y===s.y && getComputedStyle(a).pointerEvents==='none' && !document.querySelector('.i47-visual-stage .i47-signal-field')})()`), true);
+    await checkBackdrop();
+    for (const width of [1600, 1440, 1024, 768]) {
+      await cdp('Emulation.setDeviceMetricsOverride', { width, height: 1000, deviceScaleFactor: 1, mobile: false });
+      const closed = await evaluate(workspaceLayout);
+      assert.equal(closed.rail.width, 162);
+      if (navigationEvidence && width === 1600) await writeFile(screenshotPath('realm-home-fixed-menu-closed.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
+      await physicalClick(coreTrigger);
+      const box = await evaluate(coreMenuLayout);
+      assert.ok(box.left>=box.railLeft && box.right<=box.railRight && box.railRight===closed.main.left && box.bottom<=box.railBottom && box.scroll<=box.client+1 && box.documentWidth<=box.viewport, `Workspace menu stays inside the fixed left column at ${width}px: ${JSON.stringify(box)}`);
+      assert.deepEqual(await evaluate(workspaceLayout), closed, `Opening the menu does not move the workspace at ${width}px`);
+      assert.ok(await evaluate(`[...document.querySelectorAll('.i47-category > button > span')].every(el=>{const text=document.createRange();text.selectNodeContents(el);return text.getClientRects().length===1})`), 'Desktop category names fit on one line');
+      if (navigationEvidence && width === 1600) await writeFile(screenshotPath('realm-home-fixed-menu-open.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
+      await physicalClick('#i47-heading-dashboards');
+      await wait(`${visibleLists}.join()==='i47-core-dashboards'`);
+      assert.deepEqual(await evaluate(workspaceLayout), closed, `Switching categories does not move the workspace at ${width}px`);
+      assert.ok(await evaluate(`(() => {const m=document.getElementById('i47-core-menu'),r=m.getBoundingClientRect();return m.scrollWidth<=m.clientWidth+1 && [...m.querySelectorAll('button')].filter(b=>b.getClientRects().length).every(b=>b.getBoundingClientRect().right<=r.right && b.scrollWidth<=b.clientWidth+1)})()`), 'Category labels and destinations fit the rail');
+      await key('Escape','Escape',27);
+      await wait(`document.activeElement.id==='i47-core-trigger' && document.getElementById('i47-core-menu').hidden`);
+      assert.deepEqual(await evaluate(workspaceLayout), closed, `Closing the menu does not move the workspace at ${width}px`);
+      layouts.push({ width, section: 'Fixed workspace rail', ...box });
+    }
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 1600, height: 1000, deviceScaleFactor: 1, mobile: false });
+    await physicalClick(coreTrigger);
+    assert.equal(await evaluate(`(() => {const p=document.getElementById('i47-core-menu'),a=p.getBoundingClientRect(),t=document.querySelector('${coreTrigger}').getBoundingClientRect(),r=[...p.querySelectorAll('.i47-category > button')].map(e=>e.getBoundingClientRect());return a.left===t.left && a.top>=t.bottom && a.bottom<=innerHeight && r.length===5 && r.every((e,i)=>e.left===r[0].left && e.right<=a.right && (!i || e.top>=r[i-1].bottom))})()`), true, 'Desktop categories stack in one left-aligned frame');
+    const moveTo = async (selector) => {
+      const point = await evaluate(`(() => {const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+      await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', ...point });
+    };
+    await moveTo('#i47-heading-dashboards');
+    assert.deepEqual(await evaluate(visibleLists), ['i47-core-home'], 'Hover does not switch the selected category');
+    await physicalClick('#i47-heading-dashboards');
+    await wait(`${visibleLists}.join()==='i47-core-dashboards'`);
+    await moveTo('#i47-home-title');
+    assert.deepEqual(await evaluate(visibleLists), ['i47-core-dashboards'], 'Pointer leave does not collapse explicit tabs');
+    await physicalClick('#i47-home-title');
+    await wait(`document.getElementById('i47-core-menu').hidden`);
+    await key('Escape', 'Escape', 27);
+    await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', ...(await evaluate(`(() => {const r=document.querySelector('.dash-content').getBoundingClientRect();return {x:r.left+r.width*.8,y:r.top+12};})()`)) });
+    const starOffsets = `${planes}.map(el=>Math.abs(new DOMMatrix(getComputedStyle(el).transform).m41))`;
+    await wait(`(() => {const [far,middle,near]=${starOffsets};return far>0 && far<middle && middle<near})()`);
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.i47-viewport canvas')).transform`), 'none', 'Mouse parallax does not move the Weather canvas');
+    assert.equal(await evaluate(`document.querySelector('.i47-shell').dataset.atmosphere === 'stars' && getComputedStyle(document.querySelector('.i47-signal-field')).display==='none' && ${planes}.every(el=>el.getClientRects().length>0)`), true);
+    const motionOff = `document.querySelector('.i47-shell').dataset.visualMotion==='off' && !document.querySelector('${backdrop}').style.getPropertyValue('--px')`;
+    const stillStars = `${planes}.every(el=>el.getClientRects().length && new DOMMatrix(getComputedStyle(el).transform).isIdentity)`;
+    const toggleMotion = () => evaluate(`document.querySelector('.i47-appearance input').click()`);
+    await click('Customize HUD');
+    await toggleMotion(); await wait(`${motionOff} && ${stillStars}`);
+    await toggleMotion();
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await wait(`${motionOff} && ${stillStars}`);
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+    await select('Atmosphere','meteor');
+    await wait(`document.querySelector('.i47-shell').dataset.atmosphere==='meteor'`);
+    assert.equal(await evaluate(`getComputedStyle(document.querySelector('.i47-cyber-links')).display`), 'none');
+    const meteor = `getComputedStyle(document.querySelector('.i47-signal-star')).animationName`;
+    const cyber = `getComputedStyle(document.querySelector('.i47-signal-pulse')).animationName`;
+    assert.equal(await evaluate(meteor), 'i47-star');
+    await toggleMotion(); await wait(`${motionOff} && ${meteor}==='none'`);
+    await toggleMotion(); await wait(`${meteor}==='i47-star'`);
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await wait(`${motionOff} && ${meteor}==='none'`);
+    await select('Atmosphere','cyber-link'); await wait(`document.querySelector('.i47-shell').dataset.atmosphere==='cyber-link' && ${motionOff} && ${cyber}==='none'`);
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+    await wait(`${cyber}==='i47-signal'`);
+    await select('Atmosphere','minimal');
+    await wait(`getComputedStyle(document.querySelector('.i47-signal-field')).display==='none'`);
+    await select('Atmosphere','cyber-link');
+    await toggleMotion(); await wait(`${motionOff} && ${cyber}==='none'`);
+    await toggleMotion();
+    await key('Escape','Escape',27);
+    if (navigationEvidence) await writeFile(screenshotPath('realm-workspace-cyber-link.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
+    await chooseCorePage('Armory', 'Armory'); await wait(`location.hash==='#/armory'`); await checkBackdrop();
+    await click('Customize HUD'); await select('Atmosphere','meteor'); await key('Escape','Escape',27);
+    await wait(`document.querySelector('.i47-shell').dataset.atmosphere==='meteor'`);
+    await wait(`[...document.querySelectorAll('.i47-signal-star')].some(s=>{const r=s.getBoundingClientRect();return r.top>innerHeight*.34 && r.right<innerWidth-20 && Number(getComputedStyle(s).opacity)>.8})`);
+    if (navigationEvidence) {
+      // Freeze the visible streaks for compositor capture, then restore the live animation.
+      await evaluate(`document.querySelectorAll('.i47-signal-star').forEach(s=>s.style.animationPlayState='paused')`);
+      await writeFile(screenshotPath('realm-workspace-meteor.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
+      await evaluate(`document.querySelectorAll('.i47-signal-star').forEach(s=>s.style.removeProperty('animation-play-state'))`);
+    }
+    await moveTo('[data-current-location]');
+    await wait(`parseFloat(document.querySelector('${backdrop}').style.getPropertyValue('--px'))<-15`);
+    await click('Customize HUD'); await select('Atmosphere','stars'); await key('Escape','Escape',27);
+    await evaluate('history.back()'); await wait(`!location.hash && document.getElementById('i47-home-title')`); await checkBackdrop();
+    assert.equal(await evaluate(`document.querySelector('.i47-shell').dataset.atmosphere`), 'stars');
+    checks.push('Parallax Stars default: three distinct depths on one workspace backdrop, static with app pause or Reduce Motion, no canvas transforms; Cyber-Link and Meteor remain selectable');
+    checks.push('Desktop rail stays 162px at 768/1024/1440/1600px; opening, switching and closing leave the hero, canvas, content and status in place');
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 320, height: 640, deviceScaleFactor: 1, mobile: true });
+    await cdp('Emulation.setTouchEmulationEnabled', { enabled: true });
+    const tap = async (selector) => {
+      const point = await evaluate(`(() => {const e=document.querySelector(${JSON.stringify(selector)}),r=e.getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;return e.contains(document.elementFromPoint(x,y)) ? {x,y} : null;})()`);
+      assert.ok(point, `Unobstructed touch target: ${selector}`);
+      await cdp('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+      await cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    assert.deepEqual(await evaluate(visibleLists), []);
+    const mobilePage = await evaluate(workspaceLayout);
+    assert.ok(mobilePage.rail.width===320 && mobilePage.rail.bottom===mobilePage.main.top, '320px shows a permanent menu row above the workspace');
+    if (navigationEvidence) await writeFile(screenshotPath('realm-home-top-menu-closed-320.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
+    await tap(coreTrigger); await wait(`${visibleLists}.join()==='i47-core-home'`);
+    assert.deepEqual(await evaluate(workspaceLayout), mobilePage, 'Opening the top menu does not move Home Opening');
+    const mobileBox = await evaluate(coreMenuLayout);
+    assert.ok(mobileBox.left>=0 && mobileBox.right<=320 && mobileBox.bottom<640 && mobileBox.top===mobilePage.rail.bottom && mobileBox.scroll<=mobileBox.client+1, JSON.stringify(mobileBox));
+    assert.ok(await evaluate(`(() => {const m=document.getElementById('i47-core-menu');return m.scrollHeight>m.clientHeight})()`), '320px top menu scrolls internally');
+    if (navigationEvidence) { await delay(220); await writeFile(screenshotPath('realm-home-top-menu-open-320.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64')); }
+    const touchPoint = await evaluate(`(() => {const r=document.getElementById('i47-core-menu').getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.bottom-28)}})()`);
+    await cdp('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touchPoint] });
+    for (const dy of [40, 80, 125, 170, 210]) await cdp('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...touchPoint, y: touchPoint.y-dy }] });
+    // End a drag rather than flinging the list; Chromium swallows a tap used to stop momentum.
+    await delay(300);
+    await cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await wait(`document.getElementById('i47-core-menu').scrollTop>180`);
+    assert.deepEqual(await evaluate(workspaceLayout), mobilePage, 'Dragging the menu scrolls only the menu');
+    await tap('#i47-heading-armory'); await wait(`${visibleLists}.join()==='i47-core-armory'`);
+    await evaluate(`document.getElementById('i47-core-menu').scrollTop=0`);
+    await tap('#i47-heading-agents'); await wait(`${visibleLists}.join()==='i47-core-agents'`);
+    assert.deepEqual(await evaluate(workspaceLayout), mobilePage, 'Switching mobile categories leaves Home Opening in place');
+    await tap(coreTrigger); await wait(`document.getElementById('i47-core-menu').hidden`);
+    await tap(coreTrigger); await wait(`${visibleLists}.join()==='i47-core-home'`);
+    await tap('[data-current-location]'); await wait(`document.getElementById('i47-core-menu').hidden`);
+    assert.deepEqual(await evaluate(workspaceLayout), mobilePage, 'Dismissing the top menu does not move Home Opening');
+    await cdp('Emulation.setTouchEmulationEnabled', { enabled: false });
+    checks.push('320px touch opens, scrolls and switches the bounded top menu without shifting the page; trigger or outside tap dismisses it');
+    await physicalClick('[data-feed="tasks"]');
+    await wait(`document.getElementById('i47-active') && document.querySelector('.i47-feed').textContent.includes('No retained tasks yet.')`);
+    await delay(220);
+    const box = await evaluate(`(() => {const p=document.querySelector('.i47-hud-popup'),r=p.getBoundingClientRect(),s=document.querySelector('.i47-web-status').getBoundingClientRect(),b=p.querySelector('header button').getBoundingClientRect();return {left:r.left,right:r.right,bottom:r.bottom,statusTop:s.top,statusWidth:s.width,overflow:p.scrollWidth-p.clientWidth,closeWidth:b.width,closeHeight:b.height};})()`);
+    assert.ok(box.left>=0 && box.right<=320 && box.bottom<=box.statusTop && box.statusWidth<320 && box.overflow<=1 && box.closeWidth>=44 && box.closeHeight>=44, JSON.stringify(box));
+    layouts.push({ width: 320, section: 'Home Opening glass HUD', ...box });
+    await physicalClick('[data-feed="log"]');
+    await wait(`document.getElementById('i47-log') && !document.getElementById('i47-active') && document.querySelector('.i47-feed').textContent.includes('No execution events yet.')`);
+    await key('Escape','Escape',27);
+    assert.equal(await evaluate(`!document.querySelector('.i47-hud-popup') && document.activeElement.dataset.feed==='log' && !location.hash`), true);
+    await cdp('Emulation.clearDeviceMetricsOverride');
+    checks.push('Home feed counts open one bounded popup without navigating; Close/Escape restore focus and the 320px status pill remains separate');
+  }
+
+  async function checkLandingIndex() {
+    const main = `document.querySelector('.dash-content')`;
+    const index = `document.querySelector('.i47-workspace-index')`;
+    const jump = '.i47-index-jump button';
+    for (const [width, height] of [[1280, 760], [320, 640]]) {
+      await cdp('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width === 320 });
+      const size = await evaluate(`({page:document.documentElement.scrollWidth,client:${main}.clientWidth,content:${main}.scrollWidth,links:${index}.querySelectorAll('button').length})`);
+      assert.ok(size.page<=width && size.content<=size.client+1 && size.links===3, JSON.stringify(size));
+      layouts.push({ width, section: 'Home Opening landing', ...size });
+    }
+    if (navigationEvidence) await writeFile(screenshotPath('realm-opening-mobile.png'), Buffer.from((await cdp('Page.captureScreenshot', { format: 'png' })).data, 'base64'));
+    await evaluate(`(() => {const n=${index},scroll=n.scrollIntoView.bind(n);n.scrollIntoView=(opts)=>{n.dataset.testScroll=opts.behavior;scroll(opts)};})()`);
+    await click('Explore the workspace', jump);
+    await wait(`${main}.scrollTop>0 && ${index}.dataset.revealed==='true' && document.activeElement.id==='i47-index-title'`);
+    assert.equal(await evaluate(`${index}.dataset.testScroll`), 'smooth');
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await wait(`document.querySelector('.i47-shell').dataset.visualMotion==='off'`);
+    await click('Explore the workspace', jump);
+    assert.equal(await evaluate(`${index}.dataset.testScroll`), 'instant');
+    assert.equal(await evaluate(`getComputedStyle(${index}.firstElementChild).animationName`), 'none');
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+    await cdp('Emulation.clearDeviceMetricsOverride');
+    await evaluate(`void (${main}.scrollTop=0)`);
+    await click('Command DeckMeasured mission status, live signals, and confirmed directives.', '[data-index-mode="deck"]');
+    await wait(`location.hash==='#/home/deck' && document.querySelector('.overview-dock')`);
+    await evaluate('history.back()'); await wait(`!location.hash && ${index}`);
+    checks.push('Home landing fits 320 and desktop, scrolls and focuses its index, honors OS reduced motion, and opens Command Deck');
   }
 
   async function checkAccessGate() {
