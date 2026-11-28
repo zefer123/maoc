@@ -36,6 +36,14 @@ function mergeValue(base, local, remote) {
   throw new Error('SYNC_CONFLICT');
 }
 
+/**
+ * @param {{
+ *   storage?: Pick<Storage, 'getItem' | 'setItem'> | null,
+ *   fetcher?: (url: string, options: RequestInit) => Promise<Response>,
+ *   baseUrl?: string,
+ *   notify?: (detail: { status: string, collection?: string, key?: string }) => void,
+ * }} [options]
+ */
 export function createPersistenceClient({ storage, fetcher = (...args) => fetch(...args), baseUrl = '', notify = () => {} } = {}) {
   const memory = new Map();
   let metadata = {};
@@ -75,6 +83,7 @@ export function createPersistenceClient({ storage, fetcher = (...args) => fetch(
       ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(5000)
     });
     if (!response.ok) {
+      /** @type {Error & {status?: number}} */
       const error = new Error(`PERSISTENCE_HTTP_${response.status}`);
       error.status = response.status;
       throw error;

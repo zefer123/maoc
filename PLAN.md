@@ -28,6 +28,8 @@ Verified means the named evidence, not production readiness. [System Map](docs/S
 
 **Verification — current record (November 28, 2026):** Chat 1 reran `npm run verify`, exit `0`: **353/353 Node tests**, main JS **484.33 kB / 146.48 kB gzip** unchanged. Prior sequential Chromium fixtures: **88 checks / 101 layouts** each on `atomic-json` and `sqlite`, zero unexpected exceptions, not rerun for doc-only edits. Original reports: `%TEMP%/maoc-b3-20261128/` (`verify.log`, `atomic-json.json`, `sqlite.json`). No paid/live or device/GPU/60fps/formal accessibility acceptance.
 
+**Chat 2 tooling checkpoint (November 28, 2026):** Clean root and server installs passed. The expanded `npm run verify` passed: lint **0 errors / 12 warnings**, browser-scoped `checkJs` **0 diagnostics**, frontend helpers **6/6**, server tests **353/353**, and main JS unchanged at **484.33 kB / 146.48 kB gzip**. Sequential Chromium fixtures passed **88 checks / 101 layouts per driver** (`atomic-json`, `sqlite`) with zero unexpected browser exceptions. Local evidence: `%TEMP%/maoc-chat2-browser-checkjs-a66f828d/` (`verify.log`, `final-atomic-json/dashboard.json`, `final-sqlite/dashboard.json`). Hosted CI confirmation is pending; no Live Vault work.
+
 ## Active Execution Sequence
 
 Queue order is not approval; one chat per vertical slice, fixture-first.
@@ -37,7 +39,7 @@ Queue order is not approval; one chat per vertical slice, fixture-first.
 | Intelligent 47 Slice 3 - WebGL 3D | Separate approval for `three`/heavy vendor; retain 2.5D and define fallback, lazy boundary, resource disposal, accessibility and measured bundle budgets before code. |
 | Intelligent 47 Slice 4 - Custom Agents + Sub-TabViews | Plan schema, dual-driver/CLI parity, revisions and exact route state; no default Agent identity or tool-grant expansion. |
 | Intelligent 47 Slice 5 - Copilot 47 Voice/COMMS | Explicit mic/permission, failure and text fallback plan; no background access, external action or paid-provider approval implied. |
-| Chat 2 - Static Analysis Tooling | Agree on lint/type/static verification scope and baseline before introducing tooling or dependencies. |
+| Chat 2 - Static Analysis Tooling | `npm run verify`: correctness-only lint → no-emit `checkJs` (four browser entry points and local imports) → fast frontend tests → server tests → Vite build. Windows CI already invokes `verify`. The Node browser harness remains a separate fixture check; no `@types/node` was added. |
 | Pending gates | Paid-provider hardening #6, hosted CI confirmation, Cline fresh-chat/OAuth/Sentry project selection, formal a11y, real-device/GPU/60fps/capacity, Phase 1 packaging/Docker/reporting/deployment. Public demo is separate; no Live Vault/cloud work authorized. |
 | B3 remainder | Library knowledge and Team provenance/visual continuity; preserve exact IDs and retained artifact states. D.1 historical Library reload cause remains unproven. |
 | U.5 Market Analysis | [Approved specification](docs/U5-MARKET-ANALYSIS.md) owns formulas, data/freshness, HAWK-only future access and test seams. Runtime remains BTC/ETH/PAXG 24h ticker only (PAXG is not spot XAU/USD); no OHLCV/RSI/ATR/FVG/zones, new grants or orders. |

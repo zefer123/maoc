@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "allowJs": true,
+    "maxNodeModuleJsDepth": 0,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "strict": false,
+    "types": ["vite/client"]
+  },
+  "files": [
+    "src/hooks/useTelemetry.js",
+    "src/lib/dashboardRoute.js",
+    "src/lib/performancePresentation.js",
+    "src/lib/workflowGraph.js"
+  ]
+}
