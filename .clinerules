@@ -16,15 +16,27 @@
 - **Single Source of Truth (ไม่ต้องจำสเปกเก่า ให้เช็กจากแหล่งจริงเสมอ):**
   1. **โค้ดจริงในโปรเจกต์** เป็นความจริงสูงสุด
   2. **`CLAUDE.md`** เป็นเจ้าของสัญญาโค้ด, สถาปัตยกรรม, ลิมิตความปลอดภัย, Storage/Recovery และล็อก UI ปัจจุบัน
-  3. **`PLAN.md`** เป็นเจ้าของสถานะ Phase 1–7, U.1–U.5, คิวงานปัจจุบัน (`#local-data-hub-checkpoint`) และผลเทสล่าสุด
-  4. **`SKILL.md`** เป็นเจ้าของรายชื่อ Agent, ขอบเขต Tool ที่ลงทะเบียนจริง และสิทธิ์การใช้งาน
+  3. **`PLAN.md`** เป็นเจ้าของสถานะ Phase 1–7, U.1–U.5, คิวงานและผลเทสล่าสุด เริ่มอ่านจาก `#local-data-hub-checkpoint`; หลักฐานเก่าอยู่ใน `docs/archive/verification-history.md`
+  4. **`SKILL.md`** เป็นเจ้าของรายชื่อ Agent, Tool ที่ลงทะเบียนจริง และสิทธิ์การใช้งาน; `docs/specs/agent-catalog.md` เป็นสเปก ไม่ใช่สิทธิ์ runtime
   5. **`docs/THE-REALM-DESIGN-BLUEPRINT.md`** และ **`docs/agents/domain.md`** เป็นเจ้าของอัตลักษณ์ภาพและข้อตกลงมุมมองที่ตกลงกันแล้ว
 - **ประหยัดบริบทตอนเปิดงาน:** เริ่มเช็กสถานะจาก `PLAN.md#local-data-hub-checkpoint` แล้วเปิดอ่านเฉพาะหัวข้อใน `CLAUDE.md`/`SKILL.md` และไฟล์โค้ดที่เกี่ยวกับงานจริง ห้ามอ่านไฟล์ `.md` ทั้งชุดซ้ำ และข้าม `node_modules`, build output, logs, backup และ Vault
 - **ไล่แกนลอจิก 4 ด้านให้ทะลุก่อนแก้โค้ด (เทียบกับสัญญาปัจจุบันใน `CLAUDE.md`):**
   1. **Orchestration & Execution Flow:** ไล่สายข้อมูลของภารกิจ, โหนด, คิว, เงื่อนไข และด่านตรวจรับ (HUMAN / Report Gates) เพื่อไม่ให้ทำลาย contract ของ Phase ที่ทำเสร็จแล้ว
   2. **Permissions, Limits & Safety:** รักษาหลักสิทธิ์ Tool แบบจุดตัดร่วม, ขอบเขต Local/Access Gate, โควตา/Failover และห้ามเมกข้อมูลปลอม
   3. **Storage, Recovery & Realtime:** รักษา single writer lock, atomic write, fail-closed, revision parity, การแยก browser collections ออกจาก server-owned state และกติกา recovery ปัจจุบัน
-  4. **Full-Stack & UI Identity:** รักษา Tech Stack เดิม, อัตลักษณ์ภาพและสีของ The Realm, ข้อมูลที่วัดได้จริงเท่านั้น, การคุมขนาด main JS bundle < 500 kB และข้อกำหนด accessibility/routing ที่มีอยู่
+  4. **Full-Stack & UI Identity:** รักษา stack, อัตลักษณ์ The Realm, ข้อมูลที่วัดได้จริง และสัญญา accessibility/routing เดิม
+
+### Enterprise Performance Budget
+- วัดขนาด main JS ทั้งก่อนบีบอัดและ gzip เทียบ baseline; ใช้ lazy panel และ fallback ที่ไม่ทำให้ layout ขยับ อย่าเอา vendor หนักเข้า initial shell
+- ใช้ `manualChunks` เมื่ออนุมัติ vendor หนักแล้วเท่านั้น และวัดผลก่อน–หลัง; ห้ามเพิ่ม dependency หรือยกเพดานเตือนเพื่อกลบ regression
+- ใช้ selector แบบ memoized และผลลัพธ์อ้างอิงคงที่กับ WS ที่อัปเดตถี่ ให้ render เฉพาะส่วนที่ข้อมูลเปลี่ยนจริง
+- เมื่อ unmount หรือเปลี่ยน route ให้ `cancelAnimationFrame`, `dispose()` ทรัพยากร WebGL/Three.js ที่เป็นเจ้าของ, `ResizeObserver.disconnect()`, `AbortController.abort()` และถอด listeners; cleanup ต้องเรียกซ้ำได้อย่างปลอดภัย
+
+### Mandatory Pre-Code Engineering Contract (PLAN MODE)
+ก่อนเขียนโค้ดทุกฟีเจอร์ ให้ระบุแต่ละ invariant ว่าจะรักษา/ทดสอบอย่างไร หรือระบุ `N/A` พร้อมเหตุผล:
+1. **Data/Schema & Dual-Driver Parity:** ระบุ owner, schema, revision, ขอบเขต durability และ projection; เทียบ envelope/การกู้คืนบน `atomic-json` และ `sqlite` รวมถึง `vault-admin.mjs` สำหรับ stopped backup/restore/import/export เมื่อกระทบข้อมูล
+2. **Failure & Fallback Matrix:** ระบุผลต่อ UI/ข้อมูลและทางฟื้นตัวเมื่อเจอ `503`, `507`, `409`, offline, WebGL context loss หรือถูกปฏิเสธสิทธิ์; fail closed สำหรับเขียน/dispatch/grant, เก็บ draft, ห้าม replay/overwrite เงียบ ๆ และใช้ cache แบบอ่านหรือ fallback 2.5D เมื่อเหมาะสม
+3. **Render & Cleanup Invariants:** ระบุ lazy boundary, ค่าใช้จ่ายจาก WS, layout/focus/Reduce Motion, เจ้าของ resource และการทดสอบ route change/unmount หรือ context loss โดยไม่รั่วและไม่ให้ผลจาก request เก่าทับ state
 
 ## 3. สไตล์การทำงานแบบ Aligned Fast-Track Partner (ทำงานไว + ถามเก็บข้อมูลให้มุมมองตรงกัน)
 - คุยด้วยภาษาไทยที่เป็นธรรมชาติเหมือน Senior Partner ร่วมทำโปรเจกต์ กระชับ ชัดเจน ห้ามพูดห้วนแบบหุ่นยนต์และห้ามตัดคำจนงง
@@ -40,12 +52,14 @@
   - แยกขอบเขตโมดูล, Data Contract, Validation และ Error Handling ให้สะอาด เพื่อให้ต่อยอดไป Phase ถัดไปได้โดยไม่รื้อฐานเดิม
   - **สะสมมุมมองข้ามแชท (`docs/agents/domain.md`):** เช็ก `docs/agents/domain.md` ก่อนตั้งคำถามเสมอ และเมื่อตกลงแนวทางสถาปัตยกรรมหรือ UX ใหม่ได้แล้ว ให้จดสรุป 1–2 บรรทัดลงไฟล์นี้เพื่อไม่ให้ถามซ้ำในแชทถัดไป
 - **คุมขนาดต่อแชท & ค่าเริ่มต้นการเทส:**
-  - **1 Chat = 1 Vertical Slice:** จบงานทีละชิ้นย่อยที่รันเทสผ่านจริง หากงานเริ่มแตกประเด็นหรือบริบทเริ่มยาวจนเสี่ยงถูกบีบอัดความจำ ให้เตือนผู้ใช้ปิดรอบและสรุปข้อความ Handoff 3 บรรทัดสำหรับเปิดแชทใหม่
+  - **1 Chat = 1 Vertical Slice:** จบงานทีละชิ้นย่อยที่รันเทสผ่านจริง หากงานเริ่มแตกประเด็นหรือบริบทเริ่มยาวจนเสี่ยงถูกบีบอัดความจำ ให้เตือนผู้ใช้ปิดรอบและใช้ Truth Handoff 4 บรรทัดสำหรับเปิดแชทใหม่
   - **Fixture-First Default:** พัฒนาและทดสอบบน Disposable Temp Vault และ Deterministic/Mock Provider เป็นค่าเริ่มต้นเสมอ (ไม่ต้องหยุดถามซ้ำทุกแชท) และห้ามแตะ Live Vault หรือ Paid API จนกว่าผู้ใช้จะสั่งเปิดด่าน Live Acceptance แยกต่างหาก
 
 ## 4. การตรวจสอบตัวเอง, ซิงค์เอกสาร และส่งมอบงาน (Auto-Verify & Clean Handoff)
 - **เทสเองให้ผ่านจริงก่อนส่ง:** หลังแก้โค้ดเสร็จใน Act Mode ให้รัน `npm run verify` (Backend tests + Production build) และรัน `npm run test:dashboard:browser` เมื่อมีการแก้หน้าบ้าน เพื่อยืนยันว่าไม่ทำลาย baseline เดิมและไม่ลด assertions
-- **อัปเดต `.md` แบบประหยัด Token (`replace_in_file`):** อัปเดต `PLAN.md`, `CLAUDE.md` และ `SKILL.md` ตามขอบเขตเจ้าของไฟล์ด้วยวิธี **แก้ไขทับเฉพาะจุด (Overwrite & Consolidate)** ห้ามเขียนเรียงความ checkpoint ยาวๆ พอกทับ (และไม่ต้องแก้ `.clinerules` ตามฟีเจอร์ใหม่)
+- **SSOT slimming (แก้ทับ ไม่พอกข้อมูล):** อัปเดตเอกสารตามเจ้าของเรื่อง; ย้ายหลักฐานเก่าไป archive แบบคำต่อคำ เก็บ paths, hashes, metrics, anchors ที่มีคนลิงก์ และขอบเขตเดิมให้ครบ ไม่แก้ `.clinerules` ตามทุกฟีเจอร์
+- **เตือน checkpoint 1 บรรทัด** เมื่อมีงานยังไม่ commit คร่อมกว่าหนึ่ง slice ที่ verify แล้ว: เสนอแยกชุดและให้ผู้ใช้ตรวจ `git diff --cached --name-only` หลัง verify ผ่าน; ห้าม stage แบบเหมา หรือ commit/push โดยไม่ได้รับอนุมัติ
+- **ขอบเขต repo สาธารณะ:** ใช้ allowlist รายไฟล์; ห้าม stage `.env`/secrets, Live Vault/SQLite/lock, dependencies, build, backups และรายงานหรือภาพ verification ในเครื่อง
 - **ส่งมอบสั้น 4 บรรทัดพร้อมป้ายความจริง:**
   1. **ไฟล์และลอจิก/จุดต่อยอดที่วางไว้:** (สรุปตรงประเด็น)
   2. **ผลเทส & Build จริง:** (จำนวน Node tests / Browser checks / ขนาด main JS)

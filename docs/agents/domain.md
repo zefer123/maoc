@@ -9,7 +9,7 @@ per-package glossaries or a new documentation architecture.
 Before exploring a topic, read the root GLOSSARY.md if present and only relevant
 ADRs in docs/adr/. If either is absent, proceed without creating placeholder files.
 Current implementation remains the first source of facts; CLAUDE.md owns runtime
-architecture/security, PLAN.md owns scope/evidence, and SKILL.md owns capabilities.
+architecture/security, PLAN.md owns live scope and verification, and SKILL.md owns runtime capabilities.
 When changing U.5 rules or reviewing its future implementation, also read
 docs/U5-MARKET-ANALYSIS.md; the approved formulas stay there, not in the glossary.
 
@@ -21,6 +21,9 @@ docs/U5-MARKET-ANALYSIS.md; the approved formulas stay there, not in the glossar
 - **Core rail** shows only the current category by default (Home at root). The desktop rail stays 162px wide; at 760px and below the trigger is in a permanent top row with a bounded dropdown. Open, switch and close never shift the workspace. One scrollable frame shows five unnumbered names and only the selected category's nested destinations. Selecting a category does not navigate. Analytics belongs to Dashboards and Glossary to Armory. **Forecast** remains a five-day sample; Task/Log and Command Deck Status use canonical telemetry. **Web Status** separates browser connectivity, WebSocket and local time from provider health.
 - **Parallax Stars** (default), Cyber-Link, Meteor and Minimal are modes of one shared background behind all workspace pages, not a Home Opening stage or Visualizer canvas. Mouse parallax moves only this background. **Realm Intelligence 3D** remains at `#/home/visualizer`. System Reduce Motion and app pause stop automatic motion without disabling manual orbit.
 - **Workspace HUD preferences** are shared non-secret display settings backed by the Vault. `kali-cyber` defaults; `realm-cyber` and `realm-guild` are user choices. Operator name and microphone permission stay device-local; offline display edits never auto-upload.
+- **Pre-code engineering contract:** In Plan Mode record data/schema and `atomic-json`/`sqlite`/`vault-admin.mjs` parity, a fail-closed failure/fallback matrix, and render/cleanup invariants (or an explicit, reasoned N/A); rehearse with disposable fixtures before live acceptance.
+- **Enterprise performance budget:** Protect the initial shell with measured lazy boundaries and stable high-frequency WS selectors. Defer `manualChunks` until heavy vendors are authorized; dispose or cancel owned graphics, frames, observers, requests and listeners on unmount.
+- **SSOT and checkpoints:** Consolidate live docs in place, archive superseded evidence verbatim, and keep design intent outside runtime grants. When verified slices accumulate uncommitted, give a one-line checkpoint reminder; verification and review of the exact staged allowlist are required before Git approval.
 
 - Public demo means the standalone, read-only `demo/` with invented data and no API, browser storage, or app source in the deployed files. The authorized GitHub Pages source is the root of `gh-pages` in the public `zefer123/maoc` repository, not `main`. Do not publish the backend or Vault, purchase a plan, or change publishing destinations without approval.
 

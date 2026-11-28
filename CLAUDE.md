@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Release identity | Verified | Frontend and backend package versions are both **0.1.0**. Historical v3.5.0 / v4.0 labels describe the baseline / upgrade roadmap, not a published v4.0 release. |
 | Scoped roadmap (Phase 6 excluded from this audit) | Core implemented; gaps remain | Phase 1: 1.5–1.8 / 1.12 partial; local REST limit and root error boundary fixture-verified. Phase 2: 2.8 implemented on mock provider; 2.4 / 2.9 planned; 2.5 / 2.6 / 2.10 partial. Phase 3.1–3.10 implemented within scope; Phase 4.1–4.10, 5.1–5.10 and 7.1–7.10 planned. [Canonical inventory](PLAN.md#scoped-roadmap-inventory). |
-| Presentation | Implemented | Cozy Pixel guild identity, Gothic material shell and data-only Cyber accents; readable system-font content/mono data, grouped navigation and Overview situation cards/mission board. SVG/CSS 2.5D guild, single Notices Bell, hash links and department dossiers retained; 27 IDs/eight departments. No new engine or persistent world. |
+| Presentation | Intelligent 47 Slice 1–1.5/2 and first B3 slice, fixture-verified | Home Opening, fixed responsive Core rail, shared atmosphere, lazy samples, CREW/ATTENTION and one exact-ID in-place overlay; Bell/toasts reflect observed state. Mission ↔ Deliverable links use exact IDs even for retained archives without runtime. Cozy Pixel/Gothic shell, data-only Cyber accents, system reading font/mono data, Command Deck cards/board, 2.5D guild, hash routes and dossiers retain 27 IDs / 8 departments. No WebGL yet; no new engine or persistent world. |
 | Storage | Implemented; Stage 2B local SQLite accepted | Default revisioned JSON/Markdown/offline cache retained. Opt-in SQLite for five collections; explicit launcher settings and stopped full-Vault backup/restore/import/export CLI. See [Local Data Hub](docs/LOCAL-DATA-HUB.md) for contracts and [PLAN.md](PLAN.md#local-data-hub-checkpoint) for runtime evidence and next gates. |
 | Backend hardening | Candidate accepted on local SQLite; paid-provider acceptance pending | Realtime → polling retained the latest SQLite revision in the rehearsal. `INTERRUPTED` is neither permission to resume nor proof of provider outcome. Old HUMAN/approval IDs are not restored. See the [backend checklist](PLAN.md#backend-hardening-before-frontend) and [recovery design](PLAN.md#task-human-and-approval-recovery-design). |
 | CEO Quick Directive | Implemented; isolated acceptance | Shared Builder panel previews a scoped DAG and dispatches only on confirmation. `201` plus a Task ID keeps the origin view visible and adds a Mission Detail link. Ambiguous responses are never automatically retried. Room notes are not AI runs. See [PLAN.md](PLAN.md#active-execution-sequence). |
@@ -15,33 +15,17 @@
 
 ## Agent skills
 
-### Issue tracker
-
-Local Markdown, created only for requested work; stage approval remains separate.
-For ticket/spec creation, fetching or review baselines, read docs/agents/issue-tracker.md.
-
-### Triage labels
-
-Default local triage roles; readiness is not execution authority.
-For state changes, read docs/agents/triage-labels.md.
-
-### Domain docs
-
-Single-context, lazily created glossary/ADRs. Before domain exploration or naming
-decisions, read docs/agents/domain.md. For invocation compatibility or fresh-chat
-acceptance or task-matched development MCP selection/authentication, read
-docs/agents/skill-routing.md; .clinerules owns safety boundaries. Cline's Context7,
-Playwright, Firecrawl and Sentry registrations do not implement MAOC runtime MCP
-transport, grant Agent tools, install telemetry or authorize U.5.
+- [Issue tracker](docs/agents/issue-tracker.md): local Markdown, only on request; read for ticket/spec creation, fetching or review baselines. Stage approval is separate.
+- [Triage labels](docs/agents/triage-labels.md): read before state changes; readiness is not execution authority.
+- [Domain docs](docs/agents/domain.md): single context; read before naming or domain exploration and create glossary/ADRs only when needed. [Skill routing](docs/agents/skill-routing.md) owns invocation compatibility, task-matched MCP selection/auth and fresh-chat acceptance; `.clinerules` owns safety. Cline Context7/Playwright/Firecrawl/Sentry registrations add no runtime transport, Agent grants, telemetry SDK or U.5 authority.
 
 ## Stack, Ownership & Entry Points
 
 See [System Map](docs/SYSTEM-MAP.md) for cross-stack flows and data ownership.
 
-React 18, Vite 6, Tailwind 3, lucide-react; ESM JavaScript. Node >=22,
-Express, ws and cors. No state framework, test framework, npm database dependency
-or MCP SDK added. Opt-in SQLite uses lazy node:sqlite; tested on Node v26.13.0,
-not certified across the full Node >=22 range. Default JSON remains independent.
+React 18, Vite 6, Tailwind 3, lucide-react; ESM JavaScript, Node >=22, Express, ws and cors. No added state/test framework, npm database dependency or MCP SDK. Opt-in SQLite uses lazy `node:sqlite` (tested on Node v26.13.0, not certified across the full range); default JSON stays independent.
+
+**Performance & Bundle Budget:** Main JS baseline is **484.33 kB / 146.48 kB gzip**. Keep heavy panels lazy and WS selectors stable. Defer `vite.config.js` `manualChunks` until Slice 3 introduces an approved heavy vendor such as `three`; measure the initial shell and route chunks then. On unmount, cancel animation frames, dispose owned WebGL/Three.js resources, disconnect `ResizeObserver`, abort requests and detach listeners. Preserve geometry, focus and Reduce Motion across lazy states.
 
 | Entry point | Responsibility / authority |
 | --- | --- |
@@ -83,6 +67,7 @@ Existing `payload_summary` previews are unchanged; this is not event redaction.
 - Local-only backend, default 127.0.0.1:8787; allowlisted REST/WS origins. Optional Admin/User
   [Access Gate](docs/LOCAL-DATA-HUB.md#local-access-gate) defaults off. No per-user data isolation,
   general RBAC or encryption-at-rest guarantee. Do not expose publicly.
+- Access Gate rejects old/invalid credentials with HTTP/upgrade `401` and closes affected sockets with `4401`. Revision conflicts are `409`; capacity/unwritable collection writes fail with `507`/`503` before revision or notice advances. See the [storage diagnostic contract](docs/LOCAL-DATA-HUB.md#storage-fault-diagnostics).
 - No live orders, arbitrary shell/code execution, deployment or secret-access tools.
   code-sandbox invokes Node syntax checking only. Tool overrides cannot exceed server scopes;
   unknown/disabled tools fail explicitly. Existing risk sizing is unleveraged spot analysis,
@@ -206,10 +191,7 @@ use the existing deliverables sync state to distinguish loading, failure and abs
 
 ## Cozy Guild / Overview A Locks
 
-- Design provenance, source-vs-proposal color mapping and follow-up scope live in
-  docs/THE-REALM-DESIGN-BLUEPRINT.md. User approved its Stage 1 Local Vault knowledge
-  capture and subsequently B1.1 menu colors (2026-11-14). B1.1 implemented/scoped
-  checks passed; visual acceptance gates B2. No Supabase/multi-runtime or automatic RAG.
+- `docs/THE-REALM-DESIGN-BLUEPRINT.md` owns design provenance, source-vs-proposal colors and follow-ups. The operator approved Stage 1 knowledge capture and B1.1 menu colors on 2026-11-14; scoped B1.1 and B2 evidence is [archived](docs/archive/verification-history.md). No Supabase, multiple runtimes or automatic RAG.
 - Keep eight departments/27 IDs, names, coordinates, camera focus, room callbacks and palettes
   in src/data/cozyGuild.js. SVG/CSS scenes and pixel sprites, not a twelve-realm MMORPG,
   NPC simulation, imported engine or persistent world. Legacy room chat/artifact behavior is
@@ -255,25 +237,7 @@ use the existing deliverables sync state to distinguish loading, failure and abs
 
 ## Run / Verify / Documentation Sync
 
-From workspace root: npm run dev (Vite 5173), npm --prefix server start (backend 8787),
-npm --prefix server test, npm run build, npm run test:dashboard:browser.
-Browser harness uses deterministic transport and MAOC_CHROME or the standard Chrome path;
-it writes verification artifacts and asserts its proxies point only to the fixture backend.
-Do not casually run legacy live selftest.js with paid keys:
-it can authorize test reports. Paid inference is not required for the offline suite.
-
-Recovery scope: PLAN.md identifies the current code/config snapshot and its RECOVERY.md.
-That snapshot excludes live Vault, secrets and browser state. Browser workspace export is
-not a full server backup (templates/schedules/analytics/reviews/runtime are separate).
-Never overwrite a running Vault or restore writer.lock; coordinate shutdown and isolated
-restore verification before claiming full-data recoverability. No automatic Git staging.
-
-Root .env loading is independent of backend cwd; process environment takes precedence.
-Never use VITE_ for secrets. Vite proxies /api and /ws; separate production hosting needs
-an equivalent reverse proxy or non-secret VITE_API_BASE_URL. Deep health uses cached
-read-only external probes (3s deadline/30s cache), not paid inference/webhook sends.
-SIGINT/SIGTERM or supported Windows IPC shutdown abort/drain before storage release.
-
-PLAN.md owns current stage/verification/roadmap; SKILL.md owns agent/tool capability facts.
-Replace relevant sections in-place; never stack dated checkpoint essays. No release bump,
-registry/grant change, dependency migration or unrelated refactor follows from doc cleanup.
+- Workspace root: `npm run dev` (Vite 5173), `npm --prefix server start` (backend 8787), `npm --prefix server test`, `npm run build`, `npm run test:dashboard:browser`. The harness uses deterministic transport, `MAOC_CHROME` or standard Chrome, writes local artifacts and pins proxies to the fixture. Legacy live `selftest.js` can authorize test reports; do not run it with paid keys for offline verification.
+- The [archive](docs/archive/verification-history.md) identifies the code/config snapshot and its RECOVERY.md; it excludes live Vault, secrets and browser state. Browser workspace export does not include templates/schedules/analytics/reviews/runtime. Never overwrite a running Vault or restore `writer.lock`; require coordinated shutdown and isolated restore. No automatic Git staging.
+- Root `.env` loads regardless of backend cwd; process environment wins. Never use `VITE_` for secrets. Vite proxies `/api` and `/ws`; separate hosting needs an equivalent proxy or non-secret `VITE_API_BASE_URL`. Deep health uses cached read-only external probes (3s deadline/30s cache), not paid inference or webhook sends. SIGINT/SIGTERM or supported Windows IPC shutdown abort/drain before storage release.
+- [PLAN.md](PLAN.md) owns current stage/verification/roadmap; [SKILL.md](SKILL.md) owns runtime Agent/tool capabilities. Consolidate in place and archive old evidence. Doc cleanup implies no release bump, registry/grant change, dependency migration or unrelated refactor.
