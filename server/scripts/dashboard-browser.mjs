@@ -1442,16 +1442,18 @@ try {
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.i47-viewport canvas')).transform`), 'none', 'Mouse parallax does not move the Weather canvas');
     assert.equal(await evaluate(`document.querySelector('.i47-shell').dataset.atmosphere === 'stars' && getComputedStyle(document.querySelector('.i47-signal-field')).display==='none' && ${planes}.every(el=>el.getClientRects().length>0)`), true);
     const motionOff = `document.querySelector('.i47-shell').dataset.visualMotion==='off' && !document.querySelector('${backdrop}').style.getPropertyValue('--px')`;
+    const motionOn = `document.querySelector('.i47-shell').dataset.visualMotion==='on' && matchMedia('(prefers-reduced-motion: no-preference)').matches`;
     const stillStars = `${planes}.every(el=>el.getClientRects().length && new DOMMatrix(getComputedStyle(el).transform).isIdentity)`;
     const toggleMotion = () => evaluate(`document.querySelector('.i47-appearance input').click()`);
     await click('Customize HUD');
     await toggleMotion(); await wait(`${motionOff} && ${stillStars}`);
-    await toggleMotion();
+    await toggleMotion(); await wait(motionOn);
     await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
     await wait(`${motionOff} && ${stillStars}`);
     await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
     await select('Atmosphere','meteor');
-    await wait(`document.querySelector('.i47-shell').dataset.atmosphere==='meteor'`);
+    // The atmosphere can render before React handles the media-query change.
+    await wait(`document.querySelector('.i47-shell').dataset.atmosphere==='meteor' && ${motionOn}`);
     assert.equal(await evaluate(`getComputedStyle(document.querySelector('.i47-cyber-links')).display`), 'none');
     const meteor = `getComputedStyle(document.querySelector('.i47-signal-star')).animationName`;
     const cyber = `getComputedStyle(document.querySelector('.i47-signal-pulse')).animationName`;
